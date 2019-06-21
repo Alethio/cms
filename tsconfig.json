@@ -11,6 +11,7 @@
         "noUnusedLocals": true,
         "sourceMap": true,
         "declaration": true,
+        "declarationMap": true,
         "outDir": "./dist",
         "experimentalDecorators": true,
         "removeComments": true,
