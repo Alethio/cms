@@ -253,7 +253,8 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         let pageProps: IPageTemplateProps<TSlotType> = {
             translation: this.translationStore.getTranslations(page.pluginUri),
             sidebarVisible: this.sidebarMobileStore.isSidebarVisible,
-            slots: this.renderChildren(page.children, dataLoader, context, page.uiStateContainer)
+            slots: this.renderChildren(page.children, dataLoader, context, page.uiStateContainer),
+            options: page.options
         };
 
         let pageCriticalAdapterTypes = [...this.collectPageCriticalDataAdapterTypes(page.children)];
@@ -403,7 +404,8 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
                 sidebarVisible: this.sidebarMobileStore.isSidebarVisible,
                 uiStateContainer,
                 slots: children,
-                context
+                context,
+                options: m.options
             }}
         />;
     }

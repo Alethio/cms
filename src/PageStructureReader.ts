@@ -18,6 +18,11 @@ export interface IPageConfigNode {
      */
     pageCritical?: boolean;
     /**
+     * (Only for modules and pages) Allows passing configuration to a module/page instance.
+     * This object is forwarded via props to the module/page component.
+     */
+    options?: unknown;
+    /**
      * Child nodes.
      * For context nodes, this is a flat array;
      * for modules and pages it is a (placeholderName, node) map
@@ -61,6 +66,7 @@ export class PageStructureReader {
                 uri: type,
                 def: def as IPageDef<any, any>,
                 uiStateContainer: {},
+                options: node.options,
                 children: this.mapObjectKeys(node.children as Record<string, IPageConfigNode[]>)
             };
             return page;
@@ -79,6 +85,7 @@ export class PageStructureReader {
                 uuid: uuid(),
                 def: def as IModuleDef<any, any>,
                 pageCritical: !!node.pageCritical,
+                options: node.options,
                 children: node.children ?
                     this.mapObjectKeys(node.children as Record<string, IPageConfigNode[]>) : void 0
             };
