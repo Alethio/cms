@@ -26,6 +26,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
     - [Reacting to data changes](#reacting-to-data-changes)
     - [Reacting to MobX observable changes](#reacting-to-mobx-observable-changes)
     - [Adding plugin configuration](#adding-plugin-configuration)
+    - [Configuration per module/page](#configuration-per-modulepage)
     - [Plugin localization and translation strings](#plugin-localization-and-translation-strings)
     - [Plugin runtime API](#plugin-runtime-api)
     - [TypeScript support](#typescript-support)
@@ -537,6 +538,42 @@ const myPlugin = {
         });
     }
 }
+```
+
+### Configuration per module/page
+
+Global plugin configuration is useful when shared by multiple entities, but in other cases we might just want to pass some simple options to a single module or page, without changing its implementation. We can do this by providing an `options` key together with the entity URI, in the CMS `pages` config.
+
+```json
+{
+    "pages": [{
+        "def": "page://my.company.tld/my-plugin/profile-page",
+        "children": {
+            "content": [
+                {
+                    "def": "module://my.company.tld/my-plugin/profile",
+                    "options": {
+                        "showIcon": true
+                    },
+                    "pageCritical": true
+                }
+            ]
+        }
+    }]
+}
+```
+
+```jsx
+const myPlugin = {
+    init(config, api, logger, publicPath) {
+        api.addModuleDef("module://my.company.tld/my-plugin/profile", {
+            contextType: {},
+            getContentComponent: async () => ({ name, showIcon }) => <div>Hello, {name}! { showIcon ? <img /> : null }</div>,
+            getContentProps: ({ options }) => ({ name: "Joe", showIcon: options && options.showIcon })
+        });
+    }
+};
+export default myPlugin;
 ```
 
 ### Plugin localization and translation strings
