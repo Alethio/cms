@@ -3,7 +3,8 @@ import { ICmsRendererConfig } from "./ICmsRendererConfig";
 import { PluginManager } from "../PluginManager";
 import { ILogger } from "plugin-api";
 import { ITheme } from "@alethio/ui/lib/theme/ITheme";
-import { CmsConfig, IConfigData } from "../CmsConfig";
+import { CmsConfig } from "../CmsConfig";
+import { IConfigData } from "../IConfigData";
 import { LoadStatus } from "../LoadStatus";
 import { observer } from "mobx-react";
 import { observable } from "mobx";
@@ -79,6 +80,7 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
             logger={this.props.logger}
             locale={this.props.locale}
             defaultLocale={this.props.defaultLocale}
+            basePath={this.props.config.basePath}
             renderErrorPage={this.props.renderErrorPage}
             renderErrorPlaceholder={this.props.renderErrorPlaceholder}
             renderLoadingPlaceholder={this.props.renderLoadingPlaceholder}

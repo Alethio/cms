@@ -16,6 +16,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
 - [Getting started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Creating a CMS instance in a fresh app](#creating-a-cms-instance-in-a-fresh-app)
+    - [Configuration](#configuration)
     - [Creating a new plugin](#creating-a-new-plugin)
 - [Plugin tutorial](#plugin-tutorial)
     - [Writing a simple module](#writing-a-simple-module)
@@ -168,6 +169,10 @@ class App extends React.Component {
     }
 }
 ```
+
+### Configuration
+
+See [IConfigData](./src/IConfigData.ts) for full reference.
 
 ### Creating a new plugin
 

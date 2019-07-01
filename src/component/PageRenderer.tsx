@@ -39,6 +39,7 @@ export interface IPageRendererProps<TRootSlotType extends string | number> {
     logger: ILogger;
     locale: string;
     defaultLocale: string;
+    basePath?: string;
     children(props: IRootPageProps<TRootSlotType>): React.ReactNode;
     renderErrorPage(): React.ReactNode;
     renderErrorPlaceholder(): JSX.Element | null;
@@ -93,7 +94,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         let slots = this.renderChildren(rootModules, dataLoader, context, uiStateContainer);
 
         return <LinkContext.Provider value={this.linkContext}>
-            <BrowserRouter>
+            <BrowserRouter basename={this.props.basePath}>
                 <DataContext context={context} dataLoader={dataLoader}>
                     { this.props.children({
                         routes: this.renderPages(),
