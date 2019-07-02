@@ -10,5 +10,7 @@ import { MenuLayer } from "./component/topbar/MenuLayer";
 
 export { Cms, Link, ExternalLink, Translation, withInternalNav, MenuItem, MenuLayer };
 
+export { IConfigData } from "./IConfigData";
+
 export type IInternalNav = InternalNav;
 export type ISidebarMobileStore = SidebarMobileStore;

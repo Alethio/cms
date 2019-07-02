@@ -1,3 +1,7 @@
+# v1.0.0-beta.4
+
+- Fix missing TypeScript export
+
 # v1.0.0-beta.3
 
 - Add support for sub-path routing for apps that are not deployed on the domain root
