@@ -19,6 +19,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
     - [Configuration](#configuration)
     - [Creating a new plugin](#creating-a-new-plugin)
 - [Plugin tutorial](#plugin-tutorial)
+    - [Prerequisites](#prerequisites-1)
     - [Writing a simple module](#writing-a-simple-module)
     - [Adding real data and module context](#adding-real-data-and-module-context)
     - [Reusing data adapters](#reusing-data-adapters)
@@ -121,22 +122,23 @@ The next diagram shows how a module is rendered based on data that it depends on
 
 ### Prerequisites
 
-You will need a local installation of the CMS. You can start by forking the [Alethio Lite Explorer](https://github.com/Alethio/ethereum-lite-explorer) and following the instructions found in the README or by creating a new app from scratch and rendering the CMS directly. Also see the `App.tsx` file in the Alethio Explorer repository for reference.
+You will need a local installation of the CMS. You can start with your favorite React boilerplate and use the CMS component directly in your root component, as described in the next section. Or, you can have a look at the [Alethio Lite Explorer](https://github.com/Alethio/ethereum-lite-explorer) for an example setup (more specifically, [App.tsx](https://github.com/Alethio/ethereum-lite-explorer/blob/master/src/app/components/App.tsx) ).
 
 ### Creating a CMS instance in a fresh app
 
-If creating an app from scratch, you will need to render the `Cms` component into the root of your app and pass a CMS config object to it as a prop:
+With an existing app already set up, you will need to render the `Cms` component into the root React component of your app:
 
 ```jsx
+import React from "react";
 import { Cms } from "@alethio/cms";
 import { createTheme } from "@alethio/ui/lib/theme/createTheme";
 import { createPalette } from "@alethio/ui/lib/theme/createPalette";
 
-class App extends React.Component {
+export class App extends React.Component {
     constructor(props) {
         super(props);
 
-        this.theme = createTheme(createPalette);
+        this.theme = createTheme(createPalette());
     }
     render() {
         return <Cms
@@ -170,32 +172,51 @@ class App extends React.Component {
 }
 ```
 
+See [Cms.tsx](./src/component/Cms.tsx) for props documentation.
+
 ### Configuration
 
-See [IConfigData](./src/IConfigData.ts) for full reference.
+Dynamic runtime configuration can be passed to the `Cms` instance via the `config` prop. We recommend placing this configuration in a separate `config.json` file, loaded from the app's base URL at runtime. This allows decoupling the configuration from the packaged source code and avoid a rebuild whenever the config is changed. In the future, we intent to provide a GUI-based configuration editor that avoids editing the raw JSON config altogether.
+
+For full reference on the structure of the config object, please see [IConfigData](./src/IConfigData.ts).
+
+For examples, see the [plugin tutorial](#plugin-tutorial).
 
 ### Creating a new plugin
 
-You can create the plugin boilerplate with the CMS plugin tool.
+You can start by creating the plugin boilerplate with the CMS plugin tool:
 
 `$ npm i -g @alethio/cms-plugin-tool`
 
 Create a new empty folder where the plugin sources will be generated (this can be a git repo checkout):
+
 `$ mkdir <pluginName> && cd <pluginName>`
 
-IMPORTANT: You must be in the plugin folder to run the next command
+**IMPORTANT**: You must be in the plugin folder to run the next command.
+
 `$ acp init <npm_package_name> <publisher> <pluginName>`
 
 Or, if you prefer JavaScript instead of TypeScript:
+
 `$ acp init --js <npm_package_name> <publisher> <pluginName>`
 
-Next, install the plugin dependencies with:
+- `<npm_package_name>` is the name that will be used in the generated `package.json` (used if the plugin will be published to npm).
+- `<publisher>` is a namespace specific to the publisher of the plugin. We recommend setting this to your org's domain name, if you have one, or your github user handle, otherwise.
+- `<pluginName>`, together with the `<publisher>`, is the name under which the CMS will reference the plugin. The CMS forms an unique plugin URI, like `plugin://<publisher>/<pluginName>`.
+
+Next, install the plugin dependencies and build the distributables with:
+
 `$ npm install`
 
-In your app folder:
-`$ acp link <plugin_repo_folder>` will link the plugin to the `dist/plugins` folder for development. See [cms-plugin-tool repo](https://github.com/Alethio/cms-plugin-tool) for full reference or call `acp` with no arguments.
+`$ npm run watch` for development or `$ npm run build` for minified/production build.
 
-Edit the CMS config object to enable the plugin (or the config.dev.jsonc file if using the explorer):
+Switch back to your main app folder and link the plugin for development:
+
+`$ acp link <plugin_repo_folder>`
+
+This command will symlink the plugin distributable to the `dist/plugins` folder for development. You can customize this folder with the `--target` option. Call `acp` with no arguments for detailed usage.
+
+Finally, edit the CMS config object to enable the plugin (or the config.dev.jsonc file if using the lite explorer setup):
 ```jsonc
 {
     // ...
@@ -205,36 +226,45 @@ Edit the CMS config object to enable the plugin (or the config.dev.jsonc file if
     // ...
 }
 ```
-The `<publisher>` and `<pluginName>` placeholders correspond to the values found in the plugin's package.json manifest.
 
 ## Plugin tutorial
 
+### Prerequisites
+
+This section assumes that you already have a host app set up with a properly configured CMS instance and you have a freshly generated plugin boilerplate. If you haven't done so, please refer to the previous sections.
+
+*NOTE 1*: We used `$ acp init --js @company/my-plugin my.company.tld my-plugin` for our examples.
+
+*NOTE 2*: For the sake of keeping things short and simple, all our examples are written in plain JavaScript (ES2015+). However, we do recommend switching to TypeScript later, for production. This will help catching errors and malformed plugin entities at compile-time and avoid cryptic runtime errors. See the [TypeScript support](#typescript-support) section on how to properly type plugins.
+
 ### Writing a simple module
 
-Let's take an example, which we'll use throughout the tutorial. Suppose we want to create a component that shows information about a user's profile. Let's start by adding a new module definition in our plugin's index file:
+We'll start with an example, which we'll use throughout the tutorial. Suppose we want to create a component that shows information about a user's profile. We'll create a new page with a single module that shows just the user's name.
+
+Let's create a new module definition. For testing, we can add this directly in our plugin's entry file (make sure it has a proper jsx/tsx file extension), but later we will want to create a separate file for it and use an import instead.
 
 ```jsx
-const myPlugin = {
-    init(config, api, logger, publicPath) {
-        // This is required when using dynamic imports
-        __webpack_public_path__ = publicPath;
+import React from "react";
 
-        api.addModuleDef("module://my.company.tld/my-plugin/profile", {
-            // We don't use context for now, so it's an empty object
-            contextType: {},
-            // The React component is loaded asynchronously and then cached by the CMS until a full page reload
-            // It can either be a component class or a functional component
-            getContentComponent: async () => (props) => <div>Hello, {props.name}!</div>,
-            // We receive some props from the cms and we map them to the props that our component needs
-            getContentProps: cmsProps => ({ name: "Joe" })
-        });
-    }
-};
-export default myPlugin;
+// in plugin's init method:
+
+api.addModuleDef("module://my.company.tld/my-plugin/profile", {
+    // We don't use context for now, so it's an empty object
+    contextType: {},
+    // We don't use data adapters yet, we'll pass an empty array
+    dataAdapters: [],
+    // The React component is loaded asynchronously and then cached by the CMS until a full page reload
+    // It can either be a component class or a functional component
+    getContentComponent: async () => (props) => <div>Hello, {props.name}!</div>,
+    // We receive some props from the cms and we map them to the props that our component needs
+    getContentProps: cmsProps => ({ name: "Joe" })
+});
 ```
 
 Right now, our module is not visible anywhere so let's also create a simple page for it:
 ```jsx
+// in plugin's init method:
+
 api.addPageDef("page://my.company.tld/my-plugin/profile-page", {
     contextType: {},
     paths: {
@@ -247,7 +277,7 @@ api.addPageDef("page://my.company.tld/my-plugin/profile-page", {
     getPageTemplate: () => ({ slots }) => <div>
         <h1>User profile</h1>
         { /* We'll define a single named slot ("content"), where the CMS will inject our module */ }
-        { slots && slots["content"] }
+        { slots && slots.content }
     </div>
 });
 ```
@@ -268,55 +298,54 @@ Finally, let's tie the pieces together by editing the configuration again:
 }
 ```
 
-If we navigate to the `/profile` path in our app, we should see everything correctly rendered.
+If we navigate to the `/profile` path in our app, we should see everything correctly rendered. In the developer console you should see:
+```
+Loading plugin plugin://my.company.tld/my-plugin...
+Plugins loaded.
+```
 
 ### Adding real data and module context
 
-We currently have a module that shows dummy data. We'd like to be able to fetch that data from an external service. Let's assume our service fetches a user profile based on a user ID. This ID will effectively become the context of the profile page. We'll start by creating a data adapter for the profile data and then see how we can pass the context information through the page and to our module.
+We currently have a module that shows dummy data. We'd like to be able to fetch that data from an external service. Let's assume our service fetches a user profile based on a user ID. This ID will effectively become the [context](#contexts) of the profile page. We'll start by creating a data adapter for the profile data and then see how we can pass the context information through the page and to our module.
 
 ```jsx
-import { HttpRequest } from "@puzzl/browser/lib/network/HttpRequest";
+// ...
 
-const myPlugin = {
-    init(config, api, logger, publicPath) {
-        //...
-        api.addModuleDef("module://my.company.tld/my-plugin/profile", {
-            // We declare that our module needs to be inserted into a context that has a userId
+// in plugin's init method
+api.addModuleDef("module://my.company.tld/my-plugin/profile", {
+    // We declare that our module needs to be inserted into a context that has a userId
+    contextType: {
+        userId: "number"
+    },
+    // We can define data adapters inline, or reference global ones by their URI
+    // For this example we'll just define the adapter inline
+    dataAdapters: [{
+        // The alias is required so we can reference the result later in getContentProps.
+        alias: "profile",
+        // This is the actual adapter definition
+        def: {
             contextType: {
                 userId: "number"
             },
-            // We can define data adapters inline, or reference global ones by their URI
-            // For this example we'll just define the adapter inline
-            dataAdapters: [{
-                // The alias is required so we can reference the result later in getContentProps.
-                alias: "profile",
-                // This is the actual adapter definition
-                def: {
-                    contextType: {
-                        userId: "number"
-                    },
-                    async load(context, cancelToken) {
-                        // The response looks like { "name": "Joe" }
-                        return await new HttpRequest().fetchJson(`api.my.company.tld/profile/${context.userId}`);
-                    }
-                }
-            }]
-            // Here we define our React component inline. As best practice, we should move it to a separate file and
-            // use a dynamic import to extract it into a separate bundle. Otherwise, we'll slow down the initial
-            // page load while the CMS loads our plugin
-            getContentComponent: async () => (props) => <div>
-                Hello, {props.name}! Your user ID is {props.id}.
-            </div>,
-            getContentProps: ({ context, asyncData }) => ({
-                id: context.userId
-                // AsyncData is a wrapper over a data adapter result that also contains loading state info.
-                // We get access to the wrapped data through the `data` property
-                name: asyncData.get("profile").data.name
-            })
-        });
-    }
-};
-export default myPlugin;
+            async load(context, cancelToken) {
+                // This can be an XHR
+                return Promise.resolve({ name: "Joe", id: context.userId });
+            }
+        }
+    }],
+    // Here we define our React component inline. As best practice, we should move it to a separate file and
+    // use a dynamic import to extract it into a separate bundle. Otherwise, we'll slow down the initial
+    // page load while the CMS loads our plugin
+    getContentComponent: async () => (props) => <div>
+        Hello, {props.name}! Your user ID is {props.id}.
+    </div>,
+    getContentProps: ({ context, asyncData }) => ({
+        id: context.userId,
+        // AsyncData is a wrapper over a data adapter result that also contains loading state info.
+        // We get access to the wrapped data through the `data` property
+        name: asyncData.get("profile").data.name
+    })
+});
 ```
 
 Now that we have our updated module, we need to make the context information available to it, otherwise it will no longer work since we require a userId to exist. We'll modify the profile page definition to accept a userId parameter in its URL and create a root context with it.
@@ -336,45 +365,39 @@ api.addPageDef("page://my.company.tld/my-plugin/profile-page", {
 });
 ```
 
-Now, if we refresh the page, we should see the data from the API displayed in our module.
+Now, if we go to `/profile/1`, we should see the data from the API displayed in our module.
 
 ### Reusing data adapters
 
 What if we have more than one module that depends on the same data? Inlining our data adapter is simple enough, but that prevents us from reusing it in another module or plugin. Let's create a public data adapter which we can then reference in our module.
 
 ```js
-import { HttpRequest } from "@puzzl/browser/lib/network/HttpRequest";
-
-const myPlugin = {
-    init(config, api, logger, publicPath) {
-        // ...
-        api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
-            contextType: {
-                userId: "number"
-            },
-            async load(context, cancelToken) {
-                // The response looks like { "name": "Joe" }
-                return await new HttpRequest().fetchJson(`api.my.company.tld/profile/${context.userId}`);
-            }
-        });
-
-        api.addModuleDef("module://my.company.tld/my-plugin/profile", {
-            contextType: {
-                userId: "number"
-            },
-            dataAdapters: [{
-                ref: "adapter://my.company.tld/my-plugin/profile"
-            }]
-            getContentComponent: async () => (props) => <div>
-                Hello, {props.name}! Your user ID is {props.id}.
-            </div>,
-            getContentProps: ({ context, asyncData }) => ({
-                id: context.userId
-                name: asyncData.get("adapter://my.company.tld/my-plugin/profile").data.name
-            })
-        });
+// in plugin's init method:
+api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
+    contextType: {
+        userId: "number"
+    },
+    async load(context, cancelToken) {
+        // This can be an XHR
+        return Promise.resolve({ name: "Joe", id: context.userId });
     }
-}
+});
+
+api.addModuleDef("module://my.company.tld/my-plugin/profile", {
+    contextType: {
+        userId: "number"
+    },
+    dataAdapters: [{
+        ref: "adapter://my.company.tld/my-plugin/profile"
+    }],
+    getContentComponent: async () => (props) => <div>
+        Hello, {props.name}! Your user ID is {props.id}.
+    </div>,
+    getContentProps: ({ context, asyncData }) => ({
+        id: context.userId,
+        name: asyncData.get("adapter://my.company.tld/my-plugin/profile").data.name
+    })
+});
 ```
 
 ### State transitions and optional adapters
@@ -385,22 +408,28 @@ By default, any data adapter that we specify in our module definition must retur
 If we want to render something while loading the data or handle data errors in a special way, we can define custom elements for these cases:
 
 ```jsx
+import { ErrorBox } from "@alethio/ui/lib/ErrorBox";
+import { LoadingBox } from "@alethio/ui/lib/LoadingBox";
+
+// in plugin's init method:
+
 api.addModuleDef("module://my.company.tld/my-plugin/profile", {
     // ...
     getErrorPlaceholder: ({ translation }) =>
-        <ErrorBox colors="secondary">{translation.get("general.noData.text")}</ErrorBox>,
+        <ErrorBox>An error has occurred</ErrorBox>,
     getLoadingPlaceholder: ({ translation }) =>
-        <LoadingBox colors="secondary">{translation.get("general.loading")}</LoadingBox>
+        <LoadingBox>Loading...</LoadingBox>
 });
 ```
 
 > Important notes:
 > - Error and loading placeholders also come into effect when loading the module's main content component (e.g. if it's loaded with a dynamic import)
-> - If a module errors, the error placeholder is rendered, if it exists or nothing is rendered at all. There is no sensible default placeholder.
+> - If a module throws an error, the error placeholder is rendered, if it exists. Otherwise nothing is rendered at all. There is no sensible default for the placeholder.
 
-If we have an adapter that is slow to load, but we can already display part of the module, we can mark that adapter as optional and then manually handle the state changes in our adapter result:
+If we have an adapter that is slow to load, but we can already partially render the module, we can mark that adapter as optional and then manually handle the state changes in our adapter result:
 
 ```jsx
+import { observer } from "mobx-react";
 import { LoadStatus } from "plugin-api/LoadStatus";
 
 api.addModuleDef("module://my.company.tld/my-plugin/profile", {
@@ -410,15 +439,16 @@ api.addModuleDef("module://my.company.tld/my-plugin/profile", {
     dataAdapters: [{
         ref: "adapter://my.company.tld/my-plugin/profile",
         optional: true
-    }]
-    getContentComponent: async () => ({ asyncProfile }) => <div>
+    }],
+    // Important: use MobX observer to react to state changes
+    getContentComponent: async () => observer(({ asyncProfile }) => <div>
         { asyncProfile.loadStatus === LoadStatus.Loading ?
         "Loading..." :
         asyncProfile.loadStatus === LoadStatus.Error ?
         "An error has occured" :
-        Hello, {asyncProfile.data.name}!
+        `Hello, ${asyncProfile.data.name}!`
         }
-    </div>,
+    </div>),
     getContentProps: ({ asyncData }) => ({
         asyncProfile: asyncData.get("adapter://my.company.tld/my-plugin/profile")
     })
@@ -473,8 +503,7 @@ api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
         userId: "number"
     },
     async load(context, cancelToken) {
-        // The response looks like { "name": "Joe" }
-        return await new HttpRequest().fetchJson(`api.my.company.tld/profile/${context.userId}`);
+        return Promise.resolve({ name: `Joe (@${Date.now()})`, id: context.userId });
     },
     createWatcher(context, lastDataResult) {
         return new CustomDataWatcher(5000);
@@ -489,24 +518,25 @@ For this purpose we can use a predefined watcher, which is available through the
 import { observable } from "mobx";
 import { ObservableWatcher } from "plugin-api/watcher/ObservableWatcher";
 
-class MyStore = {
-    @observable
-    myObservable = 2;
-};
-const myStore = new MyStore();
+const myStore = observable({
+    myObservable: 2
+});
+
+// in plugin's init method
 
 api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
     contextType: {
         userId: "number"
     },
     async load(context, cancelToken) {
-        // The response looks like { "name": "Joe" }
-        return await new HttpRequest().fetchJson(`api.my.company.tld/profile/${context.userId}`);
+        return Promise.resolve({ name: `Joe (@${Date.now()})`, id: context.userId });
     },
     createWatcher(context, lastDataResult) {
         return new ObservableWatcher(() => myStore.myObservable);
     }
 });
+
+setInterval(() => { myStore.myObservable++; }, 3000);
 ```
 
 ### Adding plugin configuration
@@ -517,8 +547,8 @@ hardcoding it in the plugin. We'll modify the CMS config as follows:
 ```json
 {
     "plugins": {
-        "plugin://<publisher>/<pluginName>": {
-            "profileApiUrl": "api.my.company.tld/profile/%d"
+        "plugin://my.company.tld/my-plugin": {
+            "profileApiUrl": "https://api.my.company.tld/profile/%d"
         }
     }
 }
@@ -529,20 +559,15 @@ Then, we can update our data adapter to use that URL from the config:
 ```jsx
 import { HttpRequest } from "@puzzl/browser/lib/network/HttpRequest";
 
-const myPlugin = {
-    init(config, api, logger, publicPath) {
-        //...
-        api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
-            contextType: {
-                userId: "number"
-            },
-            async load(context, cancelToken) {
-                // The response looks like { "name": "Joe" }
-                return await new HttpRequest().fetchJson(config.profileApiUrl.replace("%d", context.userId));
-            }
-        });
+// in plugin's init method:
+api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
+    contextType: {
+        userId: "number"
+    },
+    async load(context, cancelToken) {
+        return await new HttpRequest().fetchJson(config.profileApiUrl.replace("%d", context.userId));
     }
-}
+});
 ```
 
 ### Configuration per module/page
@@ -558,7 +583,7 @@ Global plugin configuration is useful when shared by multiple entities, but in o
                 {
                     "def": "module://my.company.tld/my-plugin/profile",
                     "options": {
-                        "showIcon": true
+                        "showTime": true
                     },
                     "pageCritical": true
                 }
@@ -569,21 +594,18 @@ Global plugin configuration is useful when shared by multiple entities, but in o
 ```
 
 ```jsx
-const myPlugin = {
-    init(config, api, logger, publicPath) {
-        api.addModuleDef("module://my.company.tld/my-plugin/profile", {
-            contextType: {},
-            getContentComponent: async () => ({ name, showIcon }) => <div>Hello, {name}! { showIcon ? <img /> : null }</div>,
-            getContentProps: ({ options }) => ({ name: "Joe", showIcon: options && options.showIcon })
-        });
-    }
-};
-export default myPlugin;
+// in plugin's init method
+api.addModuleDef("module://my.company.tld/my-plugin/profile", {
+    contextType: {},
+    dataAdapters: [],
+    getContentComponent: async () => ({ name, showTime }) => <div>Hello, {name}! { showTime ? `Time is ${Date.now()}` : null }</div>,
+    getContentProps: ({ options }) => ({ name: "Joe", showTime: options && options.showTime })
+});
 ```
 
 ### Plugin localization and translation strings
 
-The locale string that is passed when initializing the CMS will propagate to every plugin and can be accessed inside each module's content component. Each plugin can define translation strings for each language, which are loaded by the CMS and accessible via a translation service.
+The locale string that is passed to the `Cms` component will propagate to every plugin and can be accessed inside each module's content component. Plugins can define translation strings per language, which are loaded by the CMS and accessible via a translation service.
 
 The plugin will need to be modified like this:
 ```jsx
@@ -615,11 +637,11 @@ api.addModuleDef("module://my.company.tld/my-plugin/profile", {
     },
     dataAdapters: [{
         ref: "adapter://my.company.tld/my-plugin/profile"
-    }]
+    }],
     getContentComponent: async () => (props) => <div>
-        { props.translation.get("profile.header", { name: props.name }) }
+        { props.translation.get("profile.header", { "{name}": props.name }) }
     </div>,
-    getLoadingPlaceholder: ({ translation }) => <div>{ translation.get("general.loading") }</div>
+    getLoadingPlaceholder: ({ translation }) => <div>{ translation.get("general.loading") }</div>,
     getContentProps: ({ context, asyncData, translation, locale }) => ({
         translation,
         name: asyncData.get("adapter://my.company.tld/my-plugin/profile").data.name
@@ -636,12 +658,8 @@ Each plugin has access to a runtime public API. The CMS exposes various function
 The CMS is a TypeScript first-class citizen. The [plugin-api](https://github.com/Alethio/cms-plugin-api) npm package exports TypeScript definitions for the corresponding runtime as well as interfaces for defining plugins, modules, pages, contexts, adapters etc.
 
 ```tsx
+import React from "react";
 import { IPlugin, IModuleDef, ITranslation } from "plugin-api";
-const myPlugin: IPlugin = {
-    init(config, api, logger, publicPath) {
-        // ...
-    }
-}
 
 interface IProfileProps {
     translation: ITranslation;
@@ -650,22 +668,35 @@ interface IProfileProps {
 interface IUserContext {
     userId: number;
 }
+interface IProfileData {
+    name: string;
+}
 const profileModule: IModuleDef<IProfileProps, IUserContext> = {
     contextType: {
         userId: "number"
     },
     dataAdapters: [{
         ref: "adapter://my.company.tld/my-plugin/profile"
-    }]
+    }],
     getContentComponent: async () => (props) => <div>
         { props.translation.get("profile.header", { name: props.name }) }
     </div>,
-    getLoadingPlaceholder: ({ translation }) => <div>{ translation.get("general.loading") }</div>
+    getLoadingPlaceholder: ({ translation }) => <div>{ translation.get("general.loading") }</div>,
     getContentProps: ({ context, asyncData, translation, locale }) => ({
         translation,
-        name: asyncData.get("adapter://my.company.tld/my-plugin/profile").data.name
+        name: (asyncData.get("adapter://my.company.tld/my-plugin/profile")!.data as IProfileData).name
     })
+};
+
+const myPlugin: IPlugin = {
+    init(config, api, logger, publicPath) {
+        // ...
+        api.addModuleDef("module://my.company.tld/my-plugin/profile", profileModule);
+    }
 }
+
+// tslint:disable-next-line:no-default-export
+export default myPlugin;
 ```
 
 ### Linking between internal pages
@@ -680,7 +711,8 @@ const myModule = {
     // ...
     getContentComponent: async () => () => <div>
         { /* Notice the query string which is a serialized version of the context object of that page */ }
-        <Link to={`page://my.company.tld/my-plugin/profile?userId=1234`}>
+        { /* If the page URI cannot be resolved, the link is deactivated */ }
+        <Link to={`page://my.company.tld/my-plugin/profile-page?userId=1234`}>
             This is a link
         </Link>
     </div>
@@ -691,13 +723,9 @@ Important: for links to work, we also need to define a way of transforming the p
 
 ```jsx
 api.addPageDef("page://my.company.tld/my-plugin/profile-page", {
-    contextType: {
-        userId: "number"
-    },
-    paths: {
-        "/profile/:userId": params => ({ userId: Number(params.userId) })
-    },
-    buildCanonicalUrl: ({ userId }) => `/profile/${userId}`
+    // ...
+    buildCanonicalUrl: ({ userId }) => `/profile/${userId}`,
+    // ...
 });
 ```
 
@@ -706,19 +734,19 @@ We can also access the linking logic directly with the `withInternalNav` higher-
 ```jsx
 import { withInternalNav } from "plugin-api/withInternalNav";
 
-class MyComponent {
+class MyComponent extends React.Component {
     render() {
-        return <button onClick={this.handleClick}>A Link</button>
+        return <button onClick={() => this.handleClick()}>A Link</button>
     }
 
-    handleClick = () => {
+    handleClick() {
         // Try to redirect to target page if it exist
-        if (this.props.internalNav.goTo("page://my.company.tld/my-plugin/profile?userId=1")) {
-            // Redirect worked
+        if (this.props.internalNav.goTo("page://my.company.tld/my-plugin/non-existent")) {
+            // doesn't get here because we used a non-existent page URI
         } else {
             console.log("Target page doesn't exist");
 
-            let resolvedUrl = this.props.internalNav.resolve("page://my.company.tld/my-plugin/profile?userId=1");
+            let resolvedUrl = this.props.internalNav.resolve("page://my.company.tld/my-plugin/profile-page?userId=1");
             if (resolvedUrl) {
                 location.href = resolvedUrl;
             }
@@ -749,6 +777,26 @@ api.addContextDef("context://my.company.tld/my-plugin/service-context", {
         return { serviceId };
     }
 });
+
+api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
+    contextType: {
+        userId: "number"
+    },
+    async load(context, cancelToken) {
+        return Promise.resolve({ name: "Joe", serviceId: 15 })
+    }
+});
+
+api.addModuleDef("module://my.company.tld/my-plugin/service-details", {
+    contextType: {
+        serviceId: "number"
+    },
+    dataAdapters: [],
+    getContentComponent: async () => ({serviceId}) => <div>
+        Service ID: {serviceId}
+    </div>,
+    getContentProps: ({ context }) => ({ serviceId: context.serviceId })
+});
 ```
 
 We'll then update the config as follows:
@@ -762,7 +810,6 @@ We'll then update the config as follows:
                 {
                     "def": "context://my.company.tld/my-plugin/service-context",
                     "children": [
-                        // This is a new module that displays the service data and has the { serviceId } context
                         { "def": "module://my.company.tld/my-plugin/service-details" }
                     ]
                 }
@@ -771,6 +818,8 @@ We'll then update the config as follows:
     }]
 }
 ```
+
+Refresh the browser page and you should see everything rendered correctly.
 
 ### Inline modules
 
@@ -786,10 +835,10 @@ const inlineModuleDef = {
             contextType: {
                 someData: "number"
             },
-            load: ctx => ctx.someData
+            load: async ctx => ctx.someData
         }
     }],
-    getContentComponent: async () => ({ someData })  => <div>{someData}</div>,
+    getContentComponent: async () => ({ someData })  => <div>Some data: {someData}</div>,
     getContentProps: ({ asyncData }) => ({
         someData: asyncData.get("someAdapter").data
     })
@@ -802,13 +851,22 @@ class SomeComponent extends React.Component {
             context={{
                 someData: 2
             }}
-            logger={this.props.logger}
+            logger={console}
             extraContentProps={{
                 translation: this.props.translation
             }}
         />;
     }
 }
+
+api.addModuleDef("module://my.company.tld/my-plugin/profile", {
+    // ...
+    getContentComponent: async () => (props) => <div>
+        { /* ... */ }
+        <SomeComponent translation={props.translation} />
+    </div>,
+    // ...
+});
 ```
 
 > Notes:
@@ -828,7 +886,7 @@ const myPlugin = {
         let dataSource = {
             async init() {
                 // do stuff
-            }
+            },
             fetchSomeData() {
                 return {
                     a: 2
