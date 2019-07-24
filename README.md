@@ -186,7 +186,7 @@ For examples, see the [plugin tutorial](#plugin-tutorial).
 
 You can start by creating the plugin boilerplate with the CMS plugin tool:
 
-`$ npm i -g @alethio/cms-plugin-tool`
+`$ npm i -g @alethio/cms-plugin-tool@^1.0.0-beta.4`
 
 Create a new empty folder where the plugin sources will be generated (this can be a git repo checkout):
 
@@ -194,15 +194,15 @@ Create a new empty folder where the plugin sources will be generated (this can b
 
 **IMPORTANT**: You must be in the plugin folder to run the next command.
 
-`$ acp init <npm_package_name> <publisher> <pluginName>`
+`$ acp init <publisher> <pluginName> [npm_package_name]`
 
 Or, if you prefer JavaScript instead of TypeScript:
 
-`$ acp init --js <npm_package_name> <publisher> <pluginName>`
+`$ acp init --js <publisher> <pluginName> [npm_package_name]`
 
-- `<npm_package_name>` is the name that will be used in the generated `package.json` (used if the plugin will be published to npm).
 - `<publisher>` is a namespace specific to the publisher of the plugin. We recommend setting this to your org's domain name, if you have one, or your github user handle, otherwise.
 - `<pluginName>`, together with the `<publisher>`, is the name under which the CMS will reference the plugin. The CMS forms an unique plugin URI, like `plugin://<publisher>/<pluginName>`.
+- `[npm_package_name]` is the name that will be used in the generated `package.json` (used if the plugin will be published to npm).
 
 Next, install the plugin dependencies and build the distributables with:
 
@@ -233,7 +233,7 @@ Finally, edit the CMS config object to enable the plugin (or the config.dev.json
 
 This section assumes that you already have a host app set up with a properly configured CMS instance and you have a freshly generated plugin boilerplate. If you haven't done so, please refer to the previous sections.
 
-*NOTE 1*: We used `$ acp init --js @company/my-plugin my.company.tld my-plugin` for our examples.
+*NOTE 1*: We used `$ acp init --js my.company.tld my-plugin @company/my-plugin` for our examples.
 
 *NOTE 2*: For the sake of keeping things short and simple, all our examples are written in plain JavaScript (ES2015+). However, we do recommend switching to TypeScript later, for production. This will help catching errors and malformed plugin entities at compile-time and avoid cryptic runtime errors. See the [TypeScript support](#typescript-support) section on how to properly type plugins.
 
