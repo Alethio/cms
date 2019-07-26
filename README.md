@@ -911,7 +911,7 @@ const myPlugin = {
 
 In some cases, we might want to make simple additions or overrides to existing plugins, or just prototype without going through the overhead of creating a new plugin repo + boilerplate, installing and deploying it.
 
-We'll first create a new baked-in plugin, by adding a file `myPlugin.tsx` in our host app. We'll assume this to be in the same folder as our `App` component:
+We'll first create a new baked-in plugin, by adding a file `myPlugin.js` (or `myPlugin.ts` is using TypeScript) in our host app. We'll assume this to be in the same folder as our `App` component:
 
 The structure for inline plugins is similar to regular ones, except that init method no longer receives a `publicPath` parameter. See [IInlinePlugin](src/IInlinePlugin.ts) for reference.
 
