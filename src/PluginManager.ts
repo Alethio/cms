@@ -8,11 +8,13 @@ import { CmsConfig } from "./CmsConfig";
 import { ICmsRendererConfig } from "./component/ICmsRendererConfig";
 import { PluginUrlBuilder } from "./PluginUrlBuilder";
 import { PluginValidator } from "./PluginValidator";
+import { IInlinePlugin } from "./IInlinePlugin";
 
 export class PluginManager {
     constructor(
         private logger: ILogger,
-        private config: CmsConfig
+        private config: CmsConfig,
+        private inlinePlugins?: Map<string, () => Promise<IInlinePlugin>>
     ) {
 
     }
@@ -32,12 +34,20 @@ export class PluginManager {
                 pluginUri = pluginUri.split("?")[0];
                 this.logger.info(`Loading plugin ${pluginUri}...`);
 
-                let pluginUrlBuilder = new PluginUrlBuilder(this.config.getPluginsBaseUrl());
-                let plugin = await new PluginLoader(pluginUrlBuilder).load(pluginUri, pluginVersion);
-
                 let pluginEntities = new EntityCollection();
-                let pluginPublicPath = pluginUrlBuilder.build(pluginUri, pluginVersion) + "/";
-                plugin.init(pluginConfig, pluginEntities, this.logger, pluginPublicPath);
+
+                let plugin: IPlugin;
+                if (this.inlinePlugins && this.inlinePlugins.has(pluginUri) && pluginUri.match(/^inline-plugin:\/\//)) {
+                    let inlinePlugin = await this.inlinePlugins.get(pluginUri)!();
+                    inlinePlugin.init(pluginConfig, pluginEntities, this.logger);
+                    plugin = inlinePlugin;
+                } else {
+                    let pluginUrlBuilder = new PluginUrlBuilder(this.config.getPluginsBaseUrl());
+                    plugin = await new PluginLoader(pluginUrlBuilder).load(pluginUri, pluginVersion);
+                    let pluginPublicPath = pluginUrlBuilder.build(pluginUri, pluginVersion) + "/";
+                    plugin.init(pluginConfig, pluginEntities, this.logger, pluginPublicPath);
+                }
+
                 new PluginValidator().validate(plugin, pluginEntities);
                 plugins.add(pluginUri, plugin);
 
