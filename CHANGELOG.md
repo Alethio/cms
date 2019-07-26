@@ -1,4 +1,4 @@
-# Unreleased
+# v1.0.0-beta.5
 
 - Add support for inline (baked-in) plugins
 
