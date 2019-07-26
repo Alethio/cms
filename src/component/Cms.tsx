@@ -11,11 +11,34 @@ import { observable } from "mobx";
 import { PageRenderer, IRootPageProps } from "./PageRenderer";
 import { ThemeContext } from "../ThemeContext";
 import { ThemeProvider as StyledThemeProvider } from "@alethio/ui/lib/styled-components";
+import { IInlinePlugin } from "../IInlinePlugin";
 
 export interface ICmsProps<TRootSlotType extends string> {
     /** An object that will log errors and messages from the CMS (e.g. `logger={console}`) */
     logger: ILogger;
     config: IConfigData;
+    /**
+     * Baked-in plugins definitions.
+     *
+     * Each key is a plugin URI, which must use the inline-plugin:// scheme.
+     *
+     * Each value is a function that returns a promise resolving to a plugin object.
+     *
+     * **IMPORTANT**: When using inline plugins, make sure to add the "plugin-api" module as an external
+     * in your webpack config, if making use of it:
+     *
+     * ```ts
+     * externals: [
+     *       function(context, request, callback) {
+     *           if (/^plugin-api\/.+$/.test(request)) {
+     *               return callback(null, 'commonjs ' + request);
+     *           }
+     *           callback();
+     *       }
+     *   ]
+     * ```
+     */
+    inlinePlugins?: Record<string, () => Promise<IInlinePlugin>>;
     /** If using styled-components, you can specify valid theme object, that will be passed down to each plugin */
     theme: ITheme;
     /** A locale string (e.g. en-US) that will be used for translation strings */
@@ -41,7 +64,10 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
         super(props);
 
         let cmsConfig = new CmsConfig().fromJson(this.props.config);
-        let pluginManager = new PluginManager(this.props.logger, cmsConfig);
+        let inlinePlugins = new Map(props.inlinePlugins ?
+            Object.keys(props.inlinePlugins).map(k => ([k, props.inlinePlugins![k]])) :
+            []);
+        let pluginManager = new PluginManager(this.props.logger, cmsConfig, inlinePlugins);
 
         pluginManager.loadPlugins()
             .then(cmsRendererConfig => {

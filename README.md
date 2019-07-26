@@ -36,6 +36,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
     - [Creating dynamic contexts](#creating-dynamic-contexts)
     - [Inline modules](#inline-modules)
     - [Data Sources](#data-sources)
+    - [Inline plugins](#inline-plugins)
 - [Deployment with plugins](#deployment-with-plugins)
     - [Option 1. Install the plugins in the base app at build-time](#option-1-install-the-plugins-in-the-base-app-at-build-time)
     - [Option 2. Load the plugins from an external CDN](#option-2-load-the-plugins-from-an-external-cdn)
@@ -905,6 +906,73 @@ const myPlugin = {
 ```
 
 (TODO) Make data sources accessible between plugins using their URIs.
+
+### Inline plugins
+
+In some cases, we might want to make simple additions or overrides to existing plugins, or just prototype without going through the overhead of creating a new plugin repo + boilerplate, installing and deploying it.
+
+We'll first create a new baked-in plugin, by adding a file `myPlugin.js` (or `myPlugin.ts` is using TypeScript) in our host app. We'll assume this to be in the same folder as our `App` component:
+
+The structure for inline plugins is similar to regular ones, except that init method no longer receives a `publicPath` parameter. See [IInlinePlugin](src/IInlinePlugin.ts) for reference.
+
+```jsx
+export const myPlugin = {
+    init(config, api, logger) {
+        // ... regular plugin stuff ...
+    },
+    getAvailableLocales: () => ["en-US", "zh-CN"],
+    // We assume we can use the same translations as the host app
+    loadTranslations: (locale) => import("../translation/" + locale + ".json")
+};
+```
+
+**IMPORTANT**: We also need to add the following to our webpack config `externals` section:
+```js
+externals: [
+    function(context, request, callback) {
+        if (/^plugin-api\/.+$/.test(request)) {
+            return callback(null, 'commonjs ' + request);
+        }
+        callback();
+    }
+]
+```
+
+Now let's pass the plugin to the `Cms` component instance in our `App` component:
+
+```jsx
+//...
+
+class App /*...*/{
+    //...
+    render() {
+        return <Cms
+            //...
+            inlinePlugins={{
+                "inline-plugin://my.company.tld/my-plugin": () => import("./myPlugin").then(({ myPlugin }) => myPlugin)
+            }}
+        >
+            {/*...*/}
+        </Cms>
+    }
+}
+```
+
+*Note*: Inline plugins use a different `inline-plugin://` scheme, to differentiate them from externally loaded plugins.
+
+Lastly, we need to add our plugin to the CMS config object:
+
+```jsonc
+{
+    //...
+    "plugins": {
+        //...
+        "inline-plugin://my.company.tld/my-plugin": {}
+        //...
+    }
+    //...
+}
+```
 
 ## Deployment with plugins
 

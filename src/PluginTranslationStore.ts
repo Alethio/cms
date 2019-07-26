@@ -39,7 +39,7 @@ export class PluginTranslationStore {
     }
 
     getTranslations(pluginUri: string) {
-        if (!pluginUri.match(/^plugin:\/\//)) {
+        if (!pluginUri.match(/^(inline-)?plugin:\/\//)) {
             throw new Error(`Invalid plugin URI "${pluginUri}"`);
         }
         return this.translations && this.translations.get(pluginUri);

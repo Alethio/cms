@@ -7,8 +7,9 @@ import { InternalNav } from "./InternalNav";
 import { SidebarMobileStore } from "./SidebarMobileStore";
 import { MenuItem } from "./component/topbar/MenuItem";
 import { MenuLayer } from "./component/topbar/MenuLayer";
+import { IInlinePlugin } from "./IInlinePlugin";
 
-export { Cms, Link, ExternalLink, Translation, withInternalNav, MenuItem, MenuLayer };
+export { Cms, Link, ExternalLink, Translation, withInternalNav, MenuItem, MenuLayer, IInlinePlugin };
 
 export { IConfigData } from "./IConfigData";
 

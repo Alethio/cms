@@ -1,3 +1,7 @@
+# Unreleased
+
+- Add support for inline (baked-in) plugins
+
 # v1.0.0-beta.4
 
 - Fix missing TypeScript export
