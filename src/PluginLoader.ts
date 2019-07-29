@@ -16,8 +16,8 @@ export class PluginLoader {
     async load(pluginUri: string, version?: string) {
         return new Promise<IPlugin>((resolve, reject) => {
             // Listen for errors in plugin code that won't be caught by script loader
-            const onError: OnErrorEventHandler = (ev: ErrorEvent) => reject(ev.error);
-            window.addEventListener("error", onError);
+            const onError: OnErrorEventHandlerNonNull = (ev: ErrorEvent) => reject(ev.error);
+            window.addEventListener("error", onError, { once: true });
 
             // Once the script has loaded, the JSONP callback should execute. If it doesn't run in reasonable time,
             // that means it failed. We'll use this task as a timeout handler.
