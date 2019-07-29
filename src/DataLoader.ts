@@ -72,6 +72,9 @@ export class DataLoader<TDataAdapterType, TContext> {
             });
         }
 
+        if (!this.dataAdapters.has(dataAdapterType)) {
+            throw new Error(`Data adapter "${dataAdapterType}" is not exposed by any plugin`);
+        }
         let dataAdapter = this.dataAdapters.get(dataAdapterType);
         return dataAdapter.load(context, cancelToken)
             .catch(e => {
