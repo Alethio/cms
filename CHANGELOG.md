@@ -1,6 +1,7 @@
 # Unreleased
 
 - Better plugin error handling and add config validation
+- Add alias support for data adapter config (ref variant)
 
 # v1.0.0-beta.5
 

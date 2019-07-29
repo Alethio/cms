@@ -1,5 +1,5 @@
 import { AsyncData } from "./AsyncData";
-import { IDataAdapterConfig, IDataAdapterInlineConfig } from "plugin-api/IDataAdapterConfig";
+import { IDataAdapterConfig, IDataAdapterInlineConfig, IDataAdapterRefConfig } from "plugin-api/IDataAdapterConfig";
 import { DataLoader } from "./DataLoader";
 
 export const mapModuleData = (
@@ -18,6 +18,11 @@ export const mapModuleData = (
             }
         } else {
             asyncData.set(adapterName, data);
+
+            let adapterConfig = adapterConfigs.find((c: IDataAdapterRefConfig) => !!c.ref && c.ref === adapterName);
+            if (adapterConfig && adapterConfig.alias) {
+                asyncData.set(adapterConfig.alias, data);
+            }
         }
     });
     return asyncData;
