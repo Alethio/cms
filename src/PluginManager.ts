@@ -9,6 +9,7 @@ import { ICmsRendererConfig } from "./component/ICmsRendererConfig";
 import { PluginUrlBuilder } from "./PluginUrlBuilder";
 import { PluginValidator } from "./PluginValidator";
 import { IInlinePlugin } from "./IInlinePlugin";
+import { PageStructureValidator } from "./PageStructureValidator";
 
 export class PluginManager {
     constructor(
@@ -62,7 +63,7 @@ export class PluginManager {
 
         let pagesConfig = this.config.getPages();
         let pageStructureReader = new PageStructureReader(
-            allEntities.getPageEntities(), pageEntityOwnerPlugins, this.logger
+            allEntities.getPageEntities(), new PageStructureValidator(), pageEntityOwnerPlugins, this.logger
         );
 
         let rootModules = pageStructureReader.readModuleMap(this.config.getRootModules());

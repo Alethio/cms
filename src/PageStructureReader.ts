@@ -8,12 +8,13 @@ import { IContext } from "./IContext";
 import { IModule } from "./IModule";
 import { EntityType } from "./EntityCollection";
 import { ILogger } from "plugin-api/ILogger";
+import { PageStructureValidator } from "./PageStructureValidator";
 
 export interface IPageConfigNode {
     /** A page URI for root nodes; module or context URIs for children */
     def: string;
     /**
-     * (Only for modules) Whether the module must be fully loaded before rendering the page at all.
+     * (Only for modules and contexts) Whether the module/context must be fully loaded before rendering the page at all.
      * Otherwise the loading placeholder is rendered instead
      */
     pageCritical?: boolean;
@@ -35,6 +36,7 @@ type DefType = IPageDef<any, any> | IModuleDef<any, any, any> | IContextDef<any,
 export class PageStructureReader {
     constructor(
         private defs: MixedCollection<string, DefType>,
+        private validator: PageStructureValidator,
         private ownerPlugins: Map<EntityType, string>,
         private logger: ILogger
     ) {
@@ -42,12 +44,12 @@ export class PageStructureReader {
     }
 
     read(pagesConfig: IPageConfigNode[]) {
-        // TODO: validation
+        this.validator.validate(pagesConfig);
         return pagesConfig.map(pageConfig => this.readNode(pageConfig)).filter(p => !!p) as IPage<any, any>[];
     }
 
     readModuleMap(modules: Record<string, IPageConfigNode[]>) {
-        // TODO: validation
+        this.validator.validateModuleMap(modules);
         return this.mapObjectKeys(modules) as Record<string, IModule<any, any, any>[]>;
     }
 
@@ -67,7 +69,7 @@ export class PageStructureReader {
                 def: def as IPageDef<any, any>,
                 uiStateContainer: {},
                 options: node.options,
-                children: this.mapObjectKeys(node.children as Record<string, IPageConfigNode[]>)
+                children: this.mapObjectKeys((node.children || {}) as Record<string, IPageConfigNode[]>)
             };
             return page;
         } else if (type.match(/^context:\/\//)) {
