@@ -50,10 +50,10 @@ export class PageStructureReader {
 
     readModuleMap(modules: Record<string, IPageConfigNode[]>) {
         this.validator.validateModuleMap(modules);
-        return this.mapObjectKeys(modules) as Record<string, IModule<any, any, any>[]>;
+        return this.mapObjectKeys(modules, n => this.readNode(n)) as Record<string, IModule<any, any, any>[]>;
     }
 
-    private readNode(node: IPageConfigNode) {
+    private readNode(node: IPageConfigNode, parent?: IPage<any, any> | IModule<any, any> | IContext<any, any>) {
         let type = node.def;
         let def: DefType;
         try {
@@ -69,36 +69,58 @@ export class PageStructureReader {
                 def: def as IPageDef<any, any>,
                 uiStateContainer: {},
                 options: node.options,
-                children: this.mapObjectKeys((node.children || {}) as Record<string, IPageConfigNode[]>)
+                children: {}
             };
+
+            page.children = this.mapObjectKeys(
+                (node.children || {}) as Record<string, IPageConfigNode[]>,
+                n => this.readNode(n, page)
+            );
+
             return page;
         } else if (type.match(/^context:\/\//)) {
             let context: IContext<any, any> = {
                 pluginUri: this.ownerPlugins.get(def)!,
+                uri: type,
                 def: def as IContextDef<any, any>,
                 pageCritical: !!node.pageCritical,
-                children: (node.children as IPageConfigNode[]).map(n => this.readNode(n))
-                    .filter(n => !!n) as IModule<any, any>[]
+                parent,
+                children: []
             };
+
+            context.children = (node.children as IPageConfigNode[]).map(n => this.readNode(n, context))
+                .filter(n => !!n) as IModule<any, any>[];
+
             return context;
         } else if (type.match(/^module:\/\//)) {
             let m: IModule<any, any, any> = {
                 pluginUri: this.ownerPlugins.get(def)!,
                 uuid: uuid(),
+                uri: type,
                 def: def as IModuleDef<any, any>,
                 pageCritical: !!node.pageCritical,
                 options: node.options,
-                children: node.children ?
-                    this.mapObjectKeys(node.children as Record<string, IPageConfigNode[]>) : void 0
+                parent
             };
+
+            if (node.children) {
+                m.children = this.mapObjectKeys(
+                    node.children as Record<string, IPageConfigNode[]>,
+                    n => this.readNode(n, m)
+                );
+            }
+
             return m;
         }
         throw new Error(`Unknown node type for def "${type}"`);
     }
 
-    private mapObjectKeys(o: Record<string, IPageConfigNode[]>) {
+    private mapObjectKeys(
+        o: Record<string, IPageConfigNode[]>,
+        readNode: (node: IPageConfigNode) => IPage<any, any> | IModule<any, any> | IContext<any, any> | undefined
+    ) {
         return Object.keys(o).map<[string, any]>(slotType => ([
-            slotType, o[slotType].map(c => this.readNode(c)).filter(n => !!n)
+            slotType, o[slotType].map(readNode).filter(n => !!n)
         ])).reduce((record, entries) => {
             record[entries[0]] = entries[1];
             return record;

@@ -12,6 +12,7 @@ import { PageRenderer, IRootPageProps } from "./PageRenderer";
 import { ThemeContext } from "../ThemeContext";
 import { ThemeProvider as StyledThemeProvider } from "@alethio/ui/lib/styled-components";
 import { IInlinePlugin } from "../IInlinePlugin";
+import { IHelpComponentProps } from "./IHelpComponentProps";
 
 export interface ICmsProps<TRootSlotType extends string> {
     /** An object that will log errors and messages from the CMS (e.g. `logger={console}`) */
@@ -27,7 +28,7 @@ export interface ICmsProps<TRootSlotType extends string> {
      * **IMPORTANT**: When using inline plugins, make sure to add the "plugin-api" module as an external
      * in your webpack config, if making use of it:
      *
-     * ```ts
+     * ```
      * externals: [
      *       function(context, request, callback) {
      *           if (/^plugin-api\/.+$/.test(request)) {
@@ -45,6 +46,8 @@ export interface ICmsProps<TRootSlotType extends string> {
     locale: string;
     /** A fallback default locale for the plugins that don't support the currently selected locale */
     defaultLocale: string;
+    /** If using help mode, control how the help for each module should be rendered */
+    HelpComponent?: React.ComponentType<IHelpComponentProps>;
     children(props: IRootPageProps<TRootSlotType>): React.ReactNode;
     /** What should be rendered when a route doesn't exist */
     renderErrorPage(): React.ReactNode;
@@ -107,6 +110,7 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
             locale={this.props.locale}
             defaultLocale={this.props.defaultLocale}
             basePath={this.props.config.basePath}
+            HelpComponent={this.props.HelpComponent}
             renderErrorPage={this.props.renderErrorPage}
             renderErrorPlaceholder={this.props.renderErrorPlaceholder}
             renderLoadingPlaceholder={this.props.renderLoadingPlaceholder}
