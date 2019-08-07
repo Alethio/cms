@@ -8,8 +8,11 @@ import { SidebarMobileStore } from "./SidebarMobileStore";
 import { MenuItem } from "./component/topbar/MenuItem";
 import { MenuLayer } from "./component/topbar/MenuLayer";
 import { IInlinePlugin } from "./IInlinePlugin";
+import { HelpMode } from "./component/HelpMode";
+import { IHelpComponentProps } from "./component/IHelpComponentProps";
 
 export { Cms, Link, ExternalLink, Translation, withInternalNav, MenuItem, MenuLayer, IInlinePlugin };
+export { HelpMode, IHelpComponentProps };
 
 export { IConfigData } from "./IConfigData";
 

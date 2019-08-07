@@ -40,6 +40,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
 - [Deployment with plugins](#deployment-with-plugins)
     - [Option 1. Install the plugins in the base app at build-time](#option-1-install-the-plugins-in-the-base-app-at-build-time)
     - [Option 2. Load the plugins from an external CDN](#option-2-load-the-plugins-from-an-external-cdn)
+- [Help System](#help-system)
 - [CMS Development](#cms-development)
 
 <!-- /TOC -->
@@ -1004,6 +1005,68 @@ We can first install the plugins in a temporary folder:
 `$ acp install --target /tmp/plugins <plugin_npm_package_or_local_folder>`
 
 And then sync the target folder structure with the external CDN via preferred method.
+
+## Help System
+
+Help content can be defined per module by adding a `getHelpComponent` method in the module definition.
+
+Example:
+```jsx
+let module = {
+    //...
+    getHelpComponent: () => ({ translation, /* ... */ }) => translation.get("my.help.content.key")
+}
+```
+
+Help can be displayed by turning on/off a special "help mode". In help mode, the user can hover a module and if that module has help, it will be highlighted with a border and "help" mouse cursor. When clicked, the help content for that module is rendered with a user-defined component. Help mode can be controlled from the callback which is passed to `Cms` component as child.
+
+Example:
+```jsx
+import React from "react";
+import ReactDOM from "react-dom";
+import { Observer } from "mobx-react";
+import { Cms } from "@alethio/cms";
+import { Layer } from "@alethio/ui/lib/overlay/Layer";
+import { Mask } from "@alethio/ui/lib/overlay/Mask";
+import { HelpIcon } from "@alethio/ui/lib/icon/HelpIcon";
+import { Toolbar } from "@alethio/ui/lib/layout/toolbar/Toolbar";
+import { ToolbarItem } from "@alethio/ui/lib/layout/toolbar/ToolbarItem";
+import { ToolbarIconButton } from "@alethio/ui/lib/layout/toolbar/ToolbarIconButton";
+import { Button } from "@alethio/ui/lib/control/Button";
+
+export class App extends React.Component {
+    // ...
+    render() {
+        return <Cms
+            // ...
+            HelpComponent={({ children, module, onRequestClose }) => ReactDOM.createPortal(<>
+                <Mask />
+                <Layer>
+                    {children}
+                    <Button onClick={onRequestClose}>Got it</Button>
+                </Layer>
+            </>, document.body)}
+        >{ ({ slots, routes, helpMode }) => {
+            return <div>
+                <Toolbar>
+                    { /* Observer prevents the whole page from reacting whenever helpMode is toggled */}
+                    <Observer>{() =>
+                        <ToolbarItem title={helpMode.isActive() ? "Toggle off help mode" : "Toggle on help mode"}>
+                            <ToolbarIconButton
+                                active={helpMode.isActive()}
+                                Icon={HelpIcon}
+                                onClick={() => helpMode.toggle()} />
+                        </ToolbarItem>
+                    }</Observer>
+                    {slots && slots["toolbar"]}
+                </Toolbar>
+                { /* ... */ }
+                <div>{ routes }</div>
+            </div>;
+        }}</Cms>;
+    }
+}
+```
 
 ## CMS Development
 

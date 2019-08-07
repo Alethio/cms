@@ -21,6 +21,11 @@ import { IPlugin } from "plugin-api/IPlugin";
 import { ILinkContext, LinkContext } from "./LinkContext";
 import { mapModuleData } from "../mapModuleData";
 import { PluginTranslationStore } from "../PluginTranslationStore";
+import { HelpMode } from "./HelpMode";
+import { observable } from "mobx";
+import { IHelpComponentProps } from "./IHelpComponentProps";
+import { ModuleContainer } from "./ModuleContainer";
+import { ModuleFrame } from "./ModuleFrame";
 
 export interface IRootPageProps<TSlotType extends string | number> {
     /** Placeholder where the CMS renders the routes (pages) */
@@ -29,6 +34,7 @@ export interface IRootPageProps<TSlotType extends string | number> {
     sidebarMobileStore: SidebarMobileStore;
     /** Placeholders for other modules that are placed at the root of the page */
     slots?: Record<TSlotType, JSX.Element[]>;
+    helpMode: HelpMode;
 }
 
 export interface IPageRendererProps<TRootSlotType extends string | number> {
@@ -40,6 +46,7 @@ export interface IPageRendererProps<TRootSlotType extends string | number> {
     locale: string;
     defaultLocale: string;
     basePath?: string;
+    HelpComponent?: React.ComponentType<IHelpComponentProps>;
     children(props: IRootPageProps<TRootSlotType>): React.ReactNode;
     renderErrorPage(): React.ReactNode;
     renderErrorPlaceholder(): JSX.Element | null;
@@ -56,11 +63,15 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
     private linkContext: ILinkContext;
     private rootContext = {};
     private toolbarUiState = {};
+    private helpMode: HelpMode;
+    @observable.ref
+    private helpOpenFor: IModule<any, any> | undefined;
 
     constructor(props: IPageRendererProps<TRootSlotType>) {
         super(props);
 
         this.sidebarMobileStore = new SidebarMobileStore();
+        this.helpMode = new HelpMode();
 
         this.linkContext = {
             pages: this.props.pages
@@ -99,7 +110,8 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
                     { this.props.children({
                         routes: this.renderPages(),
                         slots,
-                        sidebarMobileStore: this.sidebarMobileStore
+                        sidebarMobileStore: this.sidebarMobileStore,
+                        helpMode: this.helpMode
                     }) }
                 </DataContext>
             </BrowserRouter>
@@ -333,6 +345,10 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         return !!(child as IContext<any, any>).def.create;
     }
 
+    private isModule(child: any): child is IModule<any, any> {
+        return !!(child as IModule<any, any>).def.getContentComponent;
+    }
+
     private isRefAdapterConfig(config: IDataAdapterConfig<any>): config is IDataAdapterRefConfig {
         return !!(config as IDataAdapterRefConfig).ref;
     }
@@ -379,9 +395,37 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         let children = m.children ?
             this.renderChildren(m.children, dataLoader, context, uiStateContainer) : void 0;
 
+        let hasHelp = !!m.def.getHelpComponent;
+        let { HelpComponent } = this.props;
+
         let contentComponentPromise = m.def.getContentComponent().then(C => observer(
-            (liveProps: IContentProps<TContext, any> & ILiveContentProps) =>
-                <C {...m.def.getContentProps(liveProps)} />
+            (liveProps: IContentProps<TContext, any> & ILiveContentProps) => <>
+                { /* The container doesn't depend on observables, otherwise it would re-render the content as well */}
+                <ModuleContainer style={m.def.getWrapperStyle ? m.def.getWrapperStyle(liveProps) : {}}>
+                    { /* Using observer to prevent rerendering module content when help mode is switched on/off */}
+                    <Observer>{() => this.helpMode.isActive() && !(!hasHelp && this.moduleHasAncestorWithHelp(m)) ?
+                        <ModuleFrame
+                            hasHelp={hasHelp}
+                            onClick={hasHelp ? () => this.helpOpenFor = m : void 0}
+                        /> : null
+                    }</Observer>
+                    <Observer>{() => <>
+                        { this.helpMode.isActive() && this.helpOpenFor === m && HelpComponent ?
+                        <HelpComponent module={m} onRequestClose={() => this.helpOpenFor = void 0}>
+                            <LiveData<IContentProps<TContext, any>>
+                                logger={this.props.logger}
+                                ContentComponent={Promise.resolve(observer(
+                                    m.def.getHelpComponent!() as React.ComponentType<any>
+                                ))}
+                                contentProps={liveProps}
+                                requiredAdapterTypes={[]}
+                                asyncData={new Map()}
+                            />
+                        </HelpComponent> : null }
+                    </>}</Observer>
+                    <C {...m.def.getContentProps(liveProps)} />
+                </ModuleContainer>
+            </>
         ));
 
         const getErrorPlaceholder = m.def.getErrorPlaceholder;
@@ -409,5 +453,18 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
                 options: m.options
             }}
         />;
+    }
+
+    private moduleHasAncestorWithHelp(m: IModule<any, any>) {
+        let currentNode: IModule<any, any> | IContext<any, any> = m;
+
+        while (currentNode.parent) {
+            if (this.isModule(currentNode.parent) && currentNode.parent.def.getHelpComponent) {
+                return true;
+            }
+            currentNode = currentNode.parent as IModule<any, any> | IContext<any, any>;
+        }
+
+        return false;
     }
 }
