@@ -28,7 +28,7 @@
     "husky": "^1.3.1",
     "mobx": "^5.9.4",
     "mobx-react": "^5.4.3",
-    "plugin-api": "github:Alethio/cms-plugin-api#help-mode",
+    "plugin-api": "npm:@alethio/cms-plugin-api@^1.0.0-beta.5",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "rimraf": "^2.6.2",
