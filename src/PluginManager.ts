@@ -32,8 +32,8 @@ export class PluginManager {
             try {
                 let pluginConfig = this.config.getPluginConfig(pluginUri);
                 let pluginVersion = new URL(pluginUri).searchParams.get("v") || void 0;
-                pluginUri = pluginUri.split("?")[0];
                 this.logger.info(`Loading plugin ${pluginUri}...`);
+                pluginUri = pluginUri.split("?")[0];
 
                 let pluginEntities = new EntityCollection();
 
