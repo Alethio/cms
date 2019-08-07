@@ -401,7 +401,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         let contentComponentPromise = m.def.getContentComponent().then(C => observer(
             (liveProps: IContentProps<TContext, any> & ILiveContentProps) => <>
                 { /* The container doesn't depend on observables, otherwise it would re-render the content as well */}
-                <ModuleContainer style={m.def.getWrapperStyle ? m.def.getWrapperStyle() : {}}>
+                <ModuleContainer style={m.def.getWrapperStyle ? m.def.getWrapperStyle(liveProps) : {}}>
                     { /* Using observer to prevent rerendering module content when help mode is switched on/off */}
                     <Observer>{() => this.helpMode.isActive() && !(!hasHelp && this.moduleHasAncestorWithHelp(m)) ?
                         <ModuleFrame
