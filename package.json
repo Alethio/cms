@@ -8,7 +8,7 @@
     "build": "npm run clean && ttsc -p . && npm run lint",
     "clean": "rimraf ./dist",
     "watch": "ttsc -p . --watch",
-    "lint": "tslint -p ./tslint.prod.json",
+    "lint": "tslint -c ./tslint.prod.json -p ./tsconfig.json",
     "prepare": "npm run build"
   },
   "keywords": [],
@@ -24,11 +24,12 @@
     "@types/react-dom": "^16.8.3",
     "@types/react-router-dom": "^4.2.6",
     "@types/react-router-hash-link": "^1.2.0",
+    "@types/task-graph-runner": "^1.0.0",
     "@types/uuid": "^3.4.4",
     "husky": "^1.3.1",
     "mobx": "^5.9.4",
     "mobx-react": "^5.4.3",
-    "plugin-api": "npm:@alethio/cms-plugin-api@^1.0.0-beta.5",
+    "plugin-api": "github:Alethio/cms-plugin-api#adapter-dependencies",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "rimraf": "^2.6.2",
@@ -47,6 +48,7 @@
     "@puzzl/core": "^1.0.0-beta.1",
     "react-router-dom": "^4.2.2",
     "react-router-hash-link": "^1.2.1",
+    "task-graph-runner": "^1.0.2",
     "uuid": "^3.3.2"
   },
   "peerDependencies": {

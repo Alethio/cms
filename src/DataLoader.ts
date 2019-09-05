@@ -1,3 +1,4 @@
+import * as taskGraphRunner from "task-graph-runner";
 import { AsyncData } from "./AsyncData";
 import { Task } from "@puzzl/core/lib/async/Task";
 import { IDataWatcher } from "plugin-api/IDataWatcher";
@@ -7,34 +8,61 @@ import { IDataAdapter } from "plugin-api/IDataAdapter";
 import { MixedCollection } from "./MixedCollection";
 import { ILogger } from "plugin-api/ILogger";
 
-export class DataLoader<TDataAdapterType, TContext> {
+export class DataLoader<TDataAdapterType extends string, TContext> {
     private asyncData = new Map<TDataAdapterType, AsyncData<unknown>>();
     private dataFetchTasks = new Map<TDataAdapterType, Task<void>>();
     private dataRefreshCallbacks = new Map<TDataAdapterType, () => void>();
     private dataWatchers = new Map<TDataAdapterType, IDataWatcher[]>();
     private context: TContext;
+    private depsMap: Map<TDataAdapterType, TDataAdapterType[]>;
 
     constructor(
-        private dataAdapterTypes: TDataAdapterType[],
+        dataAdapterTypes: TDataAdapterType[],
         public dataAdapters: MixedCollection<TDataAdapterType, IDataAdapter<TContext, unknown>>,
         private logger: ILogger,
         private resetOnFetch = false
     ) {
-        this.dataAdapterTypes.forEach(dataAdapterType => {
+        this.depsMap = this.buildDepsMap(dataAdapterTypes);
+        let allAdapterTypes = [...this.depsMap.keys()];
+        allAdapterTypes.forEach(dataAdapterType => {
             this.asyncData.set(dataAdapterType, new AsyncData());
             this.dataRefreshCallbacks.set(dataAdapterType, () => this.updateData(dataAdapterType, this.context, true));
         });
     }
 
+    private buildDepsMap(adapterTypes: TDataAdapterType[]) {
+        let depsMap = new Map<TDataAdapterType, TDataAdapterType[]>();
+        let unvisitedNodes = adapterTypes;
+        let visitedNodes = new Set<TDataAdapterType>();
+        while (unvisitedNodes.length) {
+            let current = unvisitedNodes.shift()!;
+            if (visitedNodes.has(current)) {
+                continue;
+            }
+            visitedNodes.add(current);
+            let currentDeps = (this.dataAdapters.get(current)!.dependencies || []) as TDataAdapterType[];
+            depsMap.set(current, currentDeps);
+            unvisitedNodes.push(...currentDeps);
+        }
+        return depsMap;
+    }
+
     load(context: TContext) {
         this.context = context;
-        this.dataAdapterTypes.forEach(dataAdapterType => this.destroyWatcher(dataAdapterType));
-        this.dataAdapterTypes.forEach(dataAdapterType => this.updateData(dataAdapterType, this.context));
+        taskGraphRunner({
+            graph: this.depsMap,
+            task: async (adapterType) => {
+                this.destroyWatcher(adapterType);
+                await this.updateData(adapterType, this.context);
+            }
+        }).catch(e => {
+            this.logger.error(e);
+        });
     }
 
     dispose() {
         [...this.dataFetchTasks.values()].forEach(task => task.cancel());
-        this.dataAdapterTypes.forEach(dataAdapterType => this.destroyWatcher(dataAdapterType));
+        [...this.depsMap.keys()].forEach(dataAdapterType => this.destroyWatcher(dataAdapterType));
     }
 
     @action
@@ -55,6 +83,8 @@ export class DataLoader<TDataAdapterType, TContext> {
             .catch(e => this.logger.error(e));
 
         this.dataFetchTasks.set(dataAdapterType, dataFetchTask);
+
+        return dataFetchTask.wait();
     }
 
     private fetchData(dataAdapterType: TDataAdapterType, context: TContext,
@@ -75,8 +105,15 @@ export class DataLoader<TDataAdapterType, TContext> {
         if (!this.dataAdapters.has(dataAdapterType)) {
             throw new Error(`Data adapter "${dataAdapterType}" is not exposed by any plugin`);
         }
+
         let dataAdapter = this.dataAdapters.get(dataAdapterType);
-        return dataAdapter.load(context, cancelToken)
+        return Promise.resolve(this.getDepAdapterData(dataAdapter))
+            .then(depData => {
+                if (!depData) {
+                    return void 0;
+                }
+                return dataAdapter.load(context, cancelToken, depData);
+            })
             .catch(e => {
                 if (e instanceof OperationCanceledError) {
                     throw e;
@@ -93,6 +130,22 @@ export class DataLoader<TDataAdapterType, TContext> {
                 this.asyncData.get(dataAdapterType)!.update(data);
                 this.setupWatcher(dataAdapterType, context, data);
             });
+    }
+
+    private getDepAdapterData(dataAdapter: IDataAdapter<TContext, unknown>) {
+        let dataAdapterDepTypes = (dataAdapter.dependencies || []) as TDataAdapterType[];
+        let depData = new Map<string, unknown>();
+        for (let depAdapterType of dataAdapterDepTypes) {
+            let asyncData = this.asyncData.get(depAdapterType)!;
+            if (asyncData.isLoading()) {
+                throw new Error(`Adapter dependency "${depAdapterType}" should have been loaded by now.`);
+            }
+            if (!asyncData.isLoaded()) {
+                return void 0;
+            }
+            depData.set(depAdapterType, asyncData.data);
+        }
+        return depData;
     }
 
     private setupWatcher(dataAdapterType: TDataAdapterType, context: TContext, lastData: unknown) {
