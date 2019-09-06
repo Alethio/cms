@@ -88,7 +88,8 @@ export class DataLoader<TDataAdapterType extends string, TContext> {
     }
 
     private fetchData(dataAdapterType: TDataAdapterType, context: TContext,
-        isWatcherRefresh: boolean, cancelToken: CancellationToken) {
+        isWatcherRefresh: boolean, cancelToken: CancellationToken
+    ) {
         // reset data only for top-level contexts, otherwise we get flickering when refreshing data
         // Also reset with a small delay, in case the load is instant, to avoid an unnecessary render
         let resetRafId: number | undefined;
@@ -129,7 +130,19 @@ export class DataLoader<TDataAdapterType extends string, TContext> {
                 }
                 this.asyncData.get(dataAdapterType)!.update(data);
                 this.setupWatcher(dataAdapterType, context, data);
+                if (isWatcherRefresh) {
+                    this.refreshDependentAdapters(dataAdapterType, context);
+                }
             });
+    }
+
+    private refreshDependentAdapters(dataAdapterType: TDataAdapterType, context: TContext) {
+        this.depsMap.forEach((deps, dependant) => {
+            if (deps.indexOf(dataAdapterType) !== -1) {
+                // tslint:disable-next-line: no-floating-promises
+                this.updateData(dependant, context, true);
+            }
+        });
     }
 
     private getDepAdapterData(dataAdapter: IDataAdapter<TContext, unknown>) {
