@@ -30,6 +30,12 @@ export class DataLoader<TContext, TDataAdapterType extends string = string> {
         });
     }
 
+    /**
+     * Builds a map describing the data adapter dependency graph.
+     * This is the format accepted by the library that resolves the load order of the dependencies
+     *
+     * See https://www.npmjs.com/package/task-graph-runner for examples
+     */
     private buildDepsMap(adapterTypes: TDataAdapterType[]) {
         let depsMap = new Map<TDataAdapterType, TDataAdapterType[]>();
         let unvisitedNodes = adapterTypes;
@@ -49,6 +55,7 @@ export class DataLoader<TContext, TDataAdapterType extends string = string> {
 
     load(context: TContext) {
         this.context = context;
+        // Load the data adapters in parallel, in the order dictated by their required dependencies
         taskGraphRunner({
             graph: this.depsMap,
             task: async (adapterType) => {
@@ -145,6 +152,10 @@ export class DataLoader<TContext, TDataAdapterType extends string = string> {
         });
     }
 
+    /**
+     * Get the resolved data from loaded dependencies of the given data adapter.
+     * @param dataAdapter
+     */
     private getDepAdapterData(dataAdapter: IDataAdapter<TContext, unknown>) {
         let dataAdapterDepTypes = (dataAdapter.dependencies || []) as TDataAdapterType[];
         let depData = new Map<string, unknown>();
