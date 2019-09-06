@@ -3,7 +3,7 @@ import { DataLoader } from "../DataLoader";
 
 interface IDataContextProps<TContext> {
     context: TContext;
-    dataLoader: DataLoader<string, TContext>;
+    dataLoader: DataLoader<TContext>;
 }
 
 export class DataContext<TContext>

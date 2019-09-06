@@ -19,7 +19,7 @@ export interface IInlineModuleProps<TContext, TContentProps, TExtraProps> {
 
 export class InlineModule<TContext, TContentProps, TExtraProps>
 extends React.Component<IInlineModuleProps<TContext, TContentProps, TExtraProps>> {
-    private dataLoader: DataLoader<string, TContext>;
+    private dataLoader: DataLoader<TContext>;
 
     constructor(props: IInlineModuleProps<TContext, TContentProps, TExtraProps>) {
         super(props);

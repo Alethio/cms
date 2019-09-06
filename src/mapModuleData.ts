@@ -4,7 +4,7 @@ import { DataLoader } from "./DataLoader";
 
 export const mapModuleData = (
     adapterConfigs: IDataAdapterConfig<unknown>[],
-    dataLoader: DataLoader<string, unknown>,
+    dataLoader: DataLoader<unknown>,
     localAdapterScope: string
 ) => {
     let asyncData = new Map<string, AsyncData<unknown>>();

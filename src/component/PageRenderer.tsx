@@ -58,7 +58,7 @@ export class PageRenderer<TRootSlotType extends string | number>
 extends React.Component<IPageRendererProps<TRootSlotType>> {
     private translationStore: PluginTranslationStore;
     private sidebarMobileStore: SidebarMobileStore;
-    private dataLoaders = new Map<IContext<any, any> | IPage<any, any> | string, DataLoader<string, unknown>>();
+    private dataLoaders = new Map<IContext<any, any> | IPage<any, any> | string, DataLoader<unknown>>();
 
     private linkContext: ILinkContext;
     private rootContext = {};
@@ -177,9 +177,9 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         isRoot?: boolean
     ) {
         if (this.dataLoaders.has(cacheKey)) {
-            return this.dataLoaders.get(cacheKey)! as DataLoader<string, TContext>;
+            return this.dataLoaders.get(cacheKey)! as DataLoader<TContext>;
         }
-        let dataLoader = new DataLoader<string, TContext>(
+        let dataLoader = new DataLoader<TContext>(
             dataAdapterTypes,
             dataAdapters,
             this.props.logger,
@@ -309,7 +309,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
 
     private renderContext<TParentContext, TChildContext>(
         contextConfig: IContext<TParentContext, TChildContext>,
-        parentDataLoader: DataLoader<string, TParentContext>,
+        parentDataLoader: DataLoader<TParentContext>,
         parentContext: TParentContext,
         dataAdapters: MixedCollection<string, IDataAdapter<TChildContext, unknown>>,
         uiStateContainer: {}
@@ -359,7 +359,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         TChild extends IModule<any, TContext, any> | IContext<TContext, any>
     >(
         children: Record<TSlotType, TChild[]>,
-        dataLoader: DataLoader<string, TContext>,
+        dataLoader: DataLoader<TContext>,
         context: TContext,
         uiStateContainer: {}
     ) {
@@ -375,7 +375,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
     private renderChild<TContext>(
         child: IModule<any, TContext, any> | IContext<TContext, any>,
         index: number,
-        dataLoader: DataLoader<string, TContext>,
+        dataLoader: DataLoader<TContext>,
         context: TContext,
         uiStateContainer: {}
     ) {
@@ -388,7 +388,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
 
     private renderModule<TContentProps, TContext>(
         m: IModule<TContentProps, TContext, any>,
-        dataLoader: DataLoader<string, TContext>,
+        dataLoader: DataLoader<TContext>,
         uiStateContainer: {},
         context: TContext
     ) {

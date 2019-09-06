@@ -8,7 +8,7 @@ import { IDataAdapter } from "plugin-api/IDataAdapter";
 import { MixedCollection } from "./MixedCollection";
 import { ILogger } from "plugin-api/ILogger";
 
-export class DataLoader<TDataAdapterType extends string, TContext> {
+export class DataLoader<TContext, TDataAdapterType extends string = string> {
     private asyncData = new Map<TDataAdapterType, AsyncData<unknown>>();
     private dataFetchTasks = new Map<TDataAdapterType, Task<void>>();
     private dataRefreshCallbacks = new Map<TDataAdapterType, () => void>();
