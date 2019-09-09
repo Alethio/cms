@@ -1,9 +1,20 @@
 import { IPlugin } from "plugin-api/IPlugin";
+import { IPluginManifest } from "plugin-api/IPluginManifest";
 import { ScriptLoader } from "@puzzl/browser/lib/network/ScriptLoader";
 import { PluginUrlBuilder } from "./PluginUrlBuilder";
 import { Task } from "@puzzl/core/lib/async/Task";
 import { sleep } from "@puzzl/core/lib/async/sleep";
 import { OperationCanceledError } from "@puzzl/core/lib/async/cancellation";
+
+interface IPluginExports {
+    default: IPlugin;
+    manifest: IPluginManifest;
+}
+
+interface IPluginModule {
+    plugin: IPlugin;
+    manifest: IPluginManifest;
+}
 
 /**
  * See https://stackoverflow.com/questions/43163909/solution-load-independently-compiled-webpack-2-bundles-dynamically
@@ -14,7 +25,7 @@ export class PluginLoader {
     }
 
     async load(pluginUri: string, version?: string) {
-        return new Promise<IPlugin>((resolve, reject) => {
+        return new Promise<IPluginModule>((resolve, reject) => {
             // Listen for errors in plugin code that won't be caught by script loader
             const onError: OnErrorEventHandlerNonNull = (ev: ErrorEvent) => reject(ev.error);
             window.addEventListener("error", onError, { once: true });
@@ -27,10 +38,11 @@ export class PluginLoader {
                     `The JSONP callback (${this.getPluginId(pluginUri)}) was not called.`);
             });
 
-            let mainCallback = (plugin: IPlugin) => {
+            let mainCallback = ({ default: plugin, manifest }: IPluginExports ) => {
                 timeoutTask.cancel();
                 window.removeEventListener("error", onError);
-                resolve(plugin);
+
+                resolve({ plugin, manifest });
             };
             this.installMainCallback(pluginUri, mainCallback);
 
@@ -51,7 +63,7 @@ export class PluginLoader {
         let pluginId = this.getPluginId(pluginUri);
         (window as any)[pluginId] = (exports: any) => {
             delete (window as any)[pluginId];
-            mainCallback(exports.__esModule ? exports.default : exports);
+            mainCallback(exports);
         };
     }
 
