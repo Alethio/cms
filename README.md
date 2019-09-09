@@ -34,6 +34,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
     - [TypeScript support](#typescript-support)
     - [Linking between internal pages](#linking-between-internal-pages)
     - [Creating dynamic contexts](#creating-dynamic-contexts)
+    - [Data adapter dependencies](#data-adapter-dependencies)
     - [Inline modules](#inline-modules)
     - [Data Sources](#data-sources)
     - [Inline plugins](#inline-plugins)
@@ -822,6 +823,35 @@ We'll then update the config as follows:
 ```
 
 Refresh the browser page and you should see everything rendered correctly.
+
+### Data adapter dependencies
+
+In some case dynamic context could be an unnecessary overhead, which can simply be solved by directly coupling several data adapters together. Building on the example given in the previous section, we could have an adapter `service-details` that returns data for a service, based on the `serviceId`. Instead of creating a `{ userId, serviceId }` context, we could simply get the profile data (that contains the `serviceId`) by making the `profile` adapter a dependency of the `service-details` adapter.
+
+```jsx
+api.addDataAdapter("adapter://my.company.tld/my-plugin/profile", {
+    contextType: {
+        userId: "number"
+    },
+    async load(context, cancelToken) {
+        return Promise.resolve({ name: "Joe", serviceId: 15 })
+    }
+});
+
+api.addDataAdapter("adapter://my.company.tld/my-plugin/service-details", {
+    contextType: {
+        userId: "number"
+    },
+    dependencies: [
+        "adapter://my.company.tld/my-plugin/profile"
+    ],
+    async load(context, cancelToken, depData) {
+        let { serviceId } = depData.get("adapter://my.company.tld/my-plugin/profile");
+
+        return Promise.resolve({ serviceId, someRemotelyFetchedData: {} });
+    }
+});
+```
 
 ### Inline modules
 

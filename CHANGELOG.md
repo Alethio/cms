@@ -1,3 +1,7 @@
+# Unreleased
+
+- Add support for data adapter dependencies
+
 # v1.0.0-beta.6
 
 - Better plugin error handling and add config validation
