@@ -1,6 +1,6 @@
 {
   "name": "@alethio/cms",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta.7",
   "description": "Alethio Content Management System",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
