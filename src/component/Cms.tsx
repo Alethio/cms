@@ -13,6 +13,7 @@ import { ThemeContext } from "../ThemeContext";
 import { ThemeProvider as StyledThemeProvider } from "@alethio/ui/lib/styled-components";
 import { IInlinePlugin } from "../IInlinePlugin";
 import { IHelpComponentProps } from "./IHelpComponentProps";
+import { version as cmsVersion } from "../version";
 
 export interface ICmsProps<TRootSlotType extends string> {
     /** An object that will log errors and messages from the CMS (e.g. `logger={console}`) */
@@ -71,6 +72,8 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
             Object.keys(props.inlinePlugins).map(k => ([k, props.inlinePlugins![k]])) :
             []);
         let pluginManager = new PluginManager(this.props.logger, cmsConfig, inlinePlugins);
+
+        this.props.logger.info(`Initializing Alethio CMS @ ${cmsVersion}...`);
 
         pluginManager.loadPlugins()
             .then(cmsRendererConfig => {

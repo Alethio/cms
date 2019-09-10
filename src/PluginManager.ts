@@ -1,4 +1,5 @@
-import { ILogger, IPlugin } from "plugin-api";
+import * as semver from "semver";
+import { ILogger, IPlugin, IPluginManifest } from "plugin-api";
 import { MixedCollection } from "./MixedCollection";
 import { EntityCollection, EntityType } from "./EntityCollection";
 import { PluginApiRuntime } from "./PluginApiRuntime";
@@ -10,6 +11,7 @@ import { PluginUrlBuilder } from "./PluginUrlBuilder";
 import { PluginValidator } from "./PluginValidator";
 import { IInlinePlugin } from "./IInlinePlugin";
 import { PageStructureValidator } from "./PageStructureValidator";
+import { version as cmsVersion } from "./version";
 
 export class PluginManager {
     constructor(
@@ -44,7 +46,9 @@ export class PluginManager {
                     plugin = inlinePlugin;
                 } else {
                     let pluginUrlBuilder = new PluginUrlBuilder(this.config.getPluginsBaseUrl());
-                    plugin = await new PluginLoader(pluginUrlBuilder).load(pluginUri, pluginVersion);
+                    let pluginModule = await new PluginLoader(pluginUrlBuilder).load(pluginUri, pluginVersion);
+                    this.checkPluginManifest(pluginUri, pluginModule.manifest);
+                    plugin = pluginModule.plugin;
                     let pluginPublicPath = pluginUrlBuilder.build(pluginUri, pluginVersion) + "/";
                     plugin.init(pluginConfig, pluginEntities, this.logger, pluginPublicPath);
                 }
@@ -82,5 +86,25 @@ export class PluginManager {
         };
 
         return cmsRendererConfig;
+    }
+
+    private checkPluginManifest(pluginUri: string, manifest: IPluginManifest | undefined) {
+        if (!manifest) {
+            this.logger.warn(`Legacy plugin detected. Plugin "${pluginUri}" doesn't have a manifest. ` +
+                `\nMost likely the plugin was generated with an outdated cms-plugin-tool. ` +
+                `\n\nTo remove this warning, please migrate the plugin to the new format, ` +
+                `by applying the changes at https://github.com/Alethio/cms-plugin-tool/pull/8/files`);
+            return;
+        }
+        if (manifest.cmsVersion) {
+            if (!semver.validRange(manifest.cmsVersion)) {
+                this.logger.error(`Invalid manifest for plugin "${pluginUri}". ` +
+                    `"${manifest.cmsVersion}" is not a valid semver range.`);
+            } else if (!semver.satisfies(cmsVersion, manifest.cmsVersion)) {
+                this.logger.error(`Plugin "${pluginUri}" requires a different Alethio CMS version ` +
+                    `(expected = "${manifest.cmsVersion}"; actual = "${cmsVersion}").` +
+                    `\n\nWe will attempt to load the plugin now, but it may not work correctly.`);
+            }
+        }
     }
 }
