@@ -1,3 +1,7 @@
+# Unreleased
+
+- Allow optional adapters dependencies in modules to not throw an error if the adapter is undefined.
+
 # v1.0.0-beta.7
 
 - Add plugin versioning and compatibility checks. This requires plugins to export a manifest object that contains some plugin metadata. Existing plugins can be manually migrated by replicating the changes in this PR: https://github.com/Alethio/cms-plugin-tool/pull/8/files. Plugins that have not been migrated, will show warnings in the developer console, but will continue to work correctly.
