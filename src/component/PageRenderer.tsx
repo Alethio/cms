@@ -99,7 +99,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         let uiStateContainer = this.toolbarUiState;
         let rootModules = this.props.rootModules;
 
-        let dataAdapterTypes = [...this.collectDataAdapterTypes(rootModules)];
+        let dataAdapterTypes = this.collectAdapterUris(rootModules);
         let dataLoader = this.createDataLoader("internal://root", dataAdapterTypes, this.props.dataAdapters);
 
         let slots = this.renderChildren(rootModules, dataLoader, context, uiStateContainer);
@@ -147,9 +147,13 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
 
                         return this.renderPageContent<TSlotType, TContext>(page, context);
                     } else {
-                        let dataAdapterTypes = createContext.dataAdapters.map(adapter => adapter.ref);
+                        let dataAdapterUris = createContext.dataAdapters.map(adapter => adapter.ref);
+                        let optionalAdapterUris = createContext.dataAdapters
+                            .filter(adapter => !!adapter.optional)
+                            .map(adapter => adapter.ref);
+                        dataAdapterUris = this.filterMissingAdapters(dataAdapterUris, optionalAdapterUris);
                         let dataLoader = this.createDataLoader(
-                            path, dataAdapterTypes, this.props.dataAdapters);
+                            path, dataAdapterUris, this.props.dataAdapters);
                         return <DataContext context={match.params} dataLoader={dataLoader}>
                             <Observer>
                                 {() => {
@@ -189,32 +193,75 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         return dataLoader;
     }
 
-    private collectDataAdapterTypes<TContext>(
-        children: Record<any, (IModule<any, TContext, any> | IContext<TContext, any>)[]>
+    /**
+     * Gathers a list of data dependencies as adapter URIs by deeply walking the tree structure of the page
+     *
+     * For each context, data adapter URIs are grouped and deduped into a single flat array,
+     * which will be passed to a DataLoader.
+     * This is an optimization that ensures the same data is loaded only once, if required by more than one module
+     *
+     * Nested contexts are ignored, as they have their own DataLoader instances
+     */
+    private collectAdapterUris<TContext>(
+        childrenMap: Record<any, (IModule<any, TContext, any> | IContext<TContext, any>)[]>
     ) {
-        let dataAdapterTypes = new Set<string>();
-        Object.values(children).forEach(modules => {
-            modules.forEach(m => {
-                if (this.isContext(m)) {
-                    m.def.dataAdapters.map(adapter => adapter.ref).forEach(t => dataAdapterTypes.add(t));
+        let dataAdapterUris = new Set<string>();
+        // Keep track of which URI is required at least once. It can be assumed optional only if all usages are optional
+        let requiredUris = new Set<string>();
+
+        Object.values(childrenMap).forEach(children => {
+            children.forEach(child => {
+                let collected: { uri: string; optional: boolean }[];
+                if (this.isContext(child)) {
+                    collected = child.def.dataAdapters.map(adapter => ({
+                        uri: adapter.ref,
+                        optional: !!adapter.optional
+                    }));
                 } else {
-                    m.def.dataAdapters.map((adapter, i) => {
+                    collected = child.def.dataAdapters.map((adapter, i) => {
                         if (this.isRefAdapterConfig(adapter)) {
-                            return adapter.ref;
+                            return { uri: adapter.ref, optional: !!adapter.optional };
                         } else {
-                            let adapterName = `local-adapter://${m.uuid}/${i}`;
+                            let adapterName = `local-adapter://${child.uuid}/${i}`;
                             this.props.dataAdapters.add(adapterName, adapter.def);
-                            return adapterName;
+                            return { uri: adapterName, optional: !!adapter.optional };
                         }
-                    }).forEach(t => dataAdapterTypes.add(t));
+                    });
                 }
-                if (this.isContext(m) || !m.children) {
+
+                collected.forEach(({ uri, optional }) => {
+                    dataAdapterUris.add(uri);
+                    if (!optional) {
+                        requiredUris.add(uri);
+                    }
+                });
+
+                if (this.isContext(child) || !child.children) {
                     return;
                 }
-                this.collectDataAdapterTypes<TContext>(m.children).forEach(t => dataAdapterTypes.add(t));
+                this.collectAdapterUris<TContext>(child.children).forEach(uri => {
+                    dataAdapterUris.add(uri);
+                    // The nested call already filters out missing adapter URIs, so we can mark them as non-optional
+                    // to avoid filtering them again, by falsly considering them optional, without throwing an error
+                    requiredUris.add(uri);
+                });
             });
         });
-        return dataAdapterTypes;
+
+        let optionalAdapterUris = [...dataAdapterUris].filter(uri => !requiredUris.has(uri));
+        return this.filterMissingAdapters([...dataAdapterUris], optionalAdapterUris);
+    }
+
+    /** From a list of adapter URIs, filters out adapters that are optional and not defined by any plugin */
+    private filterMissingAdapters(adapterUris: string[], optionalAdapterUris: string[]) {
+        return adapterUris.filter(adapterUri => {
+            if (optionalAdapterUris.find(optionalUri => optionalUri === adapterUri) &&
+                !this.props.dataAdapters.has(adapterUri)
+            ) {
+                return false;
+            }
+            return true;
+        });
     }
 
     private collectPageCriticalDataAdapterTypes<TContext>(
@@ -258,7 +305,7 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         page: IPage<TSlotType, TContext>,
         context: TContext
     ) {
-        let dataAdapterTypes = [...this.collectDataAdapterTypes<TContext>(page.children)];
+        let dataAdapterTypes = this.collectAdapterUris<TContext>(page.children);
         let dataLoader = this.createDataLoader(page, dataAdapterTypes, this.props.dataAdapters, true);
 
         let PageTemplate = page.def.getPageTemplate();
@@ -314,11 +361,9 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
         dataAdapters: MixedCollection<string, IDataAdapter<TChildContext, unknown>>,
         uiStateContainer: {}
     ) {
-        let dataAdapterTypes = [
-            ...this.collectDataAdapterTypes<TChildContext>({
-                modules: contextConfig.children
-            })
-        ];
+        let dataAdapterTypes = this.collectAdapterUris<TChildContext>({
+            modules: contextConfig.children
+        });
         let dataLoader = this.createDataLoader(contextConfig, dataAdapterTypes, dataAdapters);
         return <Observer>
             { () => {

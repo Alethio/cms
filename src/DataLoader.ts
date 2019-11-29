@@ -126,7 +126,7 @@ export class DataLoader<TContext, TDataAdapterType extends string = string> {
                 if (e instanceof OperationCanceledError) {
                     throw e;
                 }
-                this.logger.error(`Couldn't fetch data (context = ${JSON.stringify(context)})`, e);
+                this.logger.error(`Couldn't fetch data from adapter "${dataAdapterType}"`, e, { context });
                 return void 0;
             })
             .then(data => {
