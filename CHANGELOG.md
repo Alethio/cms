@@ -1,4 +1,4 @@
-# Unreleased
+# v1.0.0-beta.8
 
 - Allow optional adapters dependencies in modules to not throw an error if the adapter is undefined.
 
