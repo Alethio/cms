@@ -30,6 +30,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
     - [Adding plugin configuration](#adding-plugin-configuration)
     - [Configuration per module/page](#configuration-per-modulepage)
     - [Plugin localization and translation strings](#plugin-localization-and-translation-strings)
+        - [Overriding plugin translations by configuration](#overriding-plugin-translations-by-configuration)
     - [Plugin runtime API](#plugin-runtime-api)
     - [TypeScript support](#typescript-support)
     - [Linking between internal pages](#linking-between-internal-pages)
@@ -651,6 +652,26 @@ api.addModuleDef("module://my.company.tld/my-plugin/profile", {
         name: asyncData.get("adapter://my.company.tld/my-plugin/profile").data.name
     })
 });
+```
+
+#### Overriding plugin translations by configuration
+
+There are some cases where w'd like to override some translation strings from configuration, without rebuilding a plugin. We can easily do this by adding a `translations` key in the `plugins` section of the CMS config:
+
+```jsonc
+{
+    "plugins": [{
+        "uri": "plugin://my.company.tld/my-plugin?v=1.0.0",
+        "config": {
+            // ...
+        },
+        "translations": {
+            "en-US": {
+                "someKey": "My custom translation string"
+            }
+        }
+    }]
+}
 ```
 
 ### Plugin runtime API
