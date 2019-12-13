@@ -33,7 +33,7 @@ export class PluginTranslationStore {
         loadedTranslations.forEach(([uri, translationJson]) => {
             translationJson = {
                 ...translationJson,
-                ...(this.pluginConfigMetas.get(uri).translations || {})[locale] || {}
+                ...this.pluginConfigMetas.get(uri).translations?.[locale] ?? {}
             };
             translations.add(uri, new Translation(translationJson));
         });
