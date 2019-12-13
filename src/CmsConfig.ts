@@ -1,10 +1,22 @@
 import { IConfigData } from "./IConfigData";
 import { IPluginConfigMeta } from "./IPluginConfigMeta";
+import { ILogger } from "plugin-api";
 
 export class CmsConfig {
     private data: IConfigData;
 
+    constructor(private logger: ILogger) {
+
+    }
+
     fromJson(data: IConfigData) {
+        if (!Array.isArray(data.plugins)) {
+            this.logger.warn(`Deprecation warning: The "plugins" key of the CMS config has a deprecated format.` +
+                `\nTo migrate, replace the object map with an array of objects containing ` +
+                `at least an "uri" and an optional "config" key.` +
+                `\n\nExample: [{ "uri": "plugin://my/plugin", "config": {}]`);
+        }
+
         this.data = data;
         return this;
     }

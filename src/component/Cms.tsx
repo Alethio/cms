@@ -67,7 +67,7 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
     constructor(props: ICmsProps<TRootSlotType>) {
         super(props);
 
-        let cmsConfig = new CmsConfig().fromJson(this.props.config);
+        let cmsConfig = new CmsConfig(this.props.logger).fromJson(this.props.config);
         let inlinePlugins = new Map(props.inlinePlugins ?
             Object.keys(props.inlinePlugins).map(k => ([k, props.inlinePlugins![k]])) :
             []);
