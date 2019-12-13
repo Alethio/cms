@@ -656,7 +656,7 @@ api.addModuleDef("module://my.company.tld/my-plugin/profile", {
 
 #### Overriding plugin translations by configuration
 
-There are some cases where w'd like to override some translation strings from configuration, without rebuilding a plugin. We can easily do this by adding a `translations` key in the `plugins` section of the CMS config:
+There are some cases where we would like to override some translation strings from configuration, without rebuilding a plugin. We can easily do this by adding a `translations` key in the `plugins` section of the CMS config:
 
 ```jsonc
 {
