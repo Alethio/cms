@@ -149,7 +149,7 @@ export class App extends React.Component {
             config={{
                 // We'll load the plugins from the same base URL as the app
                 "pluginsBaseUrl": "/plugins",
-                "plugins": {},
+                "plugins": [],
                 "pages": [],
                 "rootModules": {
                     // Named slot that we use in our root component to insert global modules
@@ -223,9 +223,9 @@ Finally, edit the CMS config object to enable the plugin (or the config.dev.json
 ```jsonc
 {
     // ...
-    "plugins": {
-        "plugin://<publisher>/<pluginName>": {}
-    }
+    "plugins": [{
+        "uri": "plugin://<publisher>/<pluginName>"
+    }]
     // ...
 }
 ```
@@ -549,11 +549,12 @@ hardcoding it in the plugin. We'll modify the CMS config as follows:
 
 ```json
 {
-    "plugins": {
-        "plugin://my.company.tld/my-plugin": {
+    "plugins": [{
+        "uri": "plugin://my.company.tld/my-plugin",
+        "config": {
             "profileApiUrl": "https://api.my.company.tld/profile/%d"
         }
-    }
+    }]
 }
 ```
 
@@ -996,11 +997,11 @@ Lastly, we need to add our plugin to the CMS config object:
 ```jsonc
 {
     //...
-    "plugins": {
+    "plugins": [{
         //...
-        "inline-plugin://my.company.tld/my-plugin": {}
+        "uri": "inline-plugin://my.company.tld/my-plugin"
         //...
-    }
+    }]
     //...
 }
 ```
@@ -1021,9 +1022,9 @@ This will copy the built plugins inside `dist/plugins` folder.
 
 ```jsonc
 {
-    "plugins": {
-        "plugin://my.company.tld/my-plugin?v=1.0.0": {}
-    }
+    "plugins": [{
+        "uri": "plugin://my.company.tld/my-plugin?v=1.0.0"
+    }]
 }
 ```
 
