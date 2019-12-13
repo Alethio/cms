@@ -1,4 +1,5 @@
 import { IPageConfigNode } from "./PageStructureReader";
+import { IPluginConfigMeta } from "./IPluginConfigMeta";
 
 export interface IConfigData {
     /**
@@ -14,15 +15,17 @@ export interface IConfigData {
     /**
      * Specifies which plugins will be loaded, together with their specific configuration.
      *
-     * This is an object that maps pluginUri-s to plugin config objects.
-     * If a plugin has no configuration, then just pass an empty object.
+     * This is an array of objects, each containing at least an `uri` property.
      *
      * Depending on how plugins were installed (if we use an external plugin CDN/repository, or
      * if we used `acp install` without the `--dev` option),
      * the pluginUri can also contain a query string that specifies the version
      * that we want to load (e.g. `?v=1.0.0`).
+     *
+     * Legacy behavior (deprecated): This can be an object that maps pluginUri-s to plugin config objects.
+     * If a plugin has no configuration, then just pass an empty object.
      */
-    plugins: Record<string, unknown>;
+    plugins: Record<string, unknown> | IPluginConfigMeta<unknown>[];
     /**
      * A tree structure describing which pages are available, together with their descendant modules
      * See `IPageConfigNode` for the format of each node.

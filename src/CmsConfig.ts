@@ -13,10 +13,19 @@ export class CmsConfig {
     }
 
     getPluginConfig(pluginUri: string) {
-        if (!this.data.plugins[pluginUri]) {
-            throw new Error(`Missing plugin config "${pluginUri}"`);
+        if (Array.isArray(this.data.plugins)) {
+            let pluginConfigMeta = this.data.plugins.find(p => p.uri === pluginUri);
+            if (!pluginConfigMeta) {
+                throw new Error(`Missing plugin config "${pluginUri}"`);
+            }
+            return pluginConfigMeta.config || {};
+        } else {
+            // Legacy
+            if (!this.data.plugins[pluginUri]) {
+                throw new Error(`Missing plugin config "${pluginUri}"`);
+            }
+            return this.data.plugins[pluginUri];
         }
-        return this.data.plugins[pluginUri];
     }
 
     getPluginUris() {
