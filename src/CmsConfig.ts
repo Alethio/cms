@@ -46,6 +46,10 @@ export class CmsConfig {
     }
 
     getPluginUris() {
+        if (Array.isArray(this.data.plugins)) {
+            return this.data.plugins.map(plugin => plugin.uri);
+        }
+        // Legacy
         return Object.keys(this.data.plugins);
     }
 
