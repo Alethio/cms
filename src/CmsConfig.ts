@@ -1,4 +1,5 @@
 import { IConfigData } from "./IConfigData";
+import { IPluginConfigMeta } from "./IPluginConfigMeta";
 
 export class CmsConfig {
     private data: IConfigData;
@@ -12,19 +13,23 @@ export class CmsConfig {
         return this.data.pluginsBaseUrl;
     }
 
-    getPluginConfig(pluginUri: string) {
+    getPluginConfigMeta(pluginUri: string) {
         if (Array.isArray(this.data.plugins)) {
             let pluginConfigMeta = this.data.plugins.find(p => p.uri === pluginUri);
             if (!pluginConfigMeta) {
                 throw new Error(`Missing plugin config "${pluginUri}"`);
             }
-            return pluginConfigMeta.config || {};
+            return pluginConfigMeta;
         } else {
             // Legacy
             if (!this.data.plugins[pluginUri]) {
                 throw new Error(`Missing plugin config "${pluginUri}"`);
             }
-            return this.data.plugins[pluginUri];
+            let configMeta: IPluginConfigMeta<unknown> = {
+                uri: pluginUri,
+                config: this.data.plugins[pluginUri]
+            };
+            return configMeta;
         }
     }
 

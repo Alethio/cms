@@ -26,6 +26,7 @@ import { observable } from "mobx";
 import { IHelpComponentProps } from "./IHelpComponentProps";
 import { ModuleContainer } from "./ModuleContainer";
 import { ModuleFrame } from "./ModuleFrame";
+import { IPluginConfigMeta } from "../IPluginConfigMeta";
 
 export interface IRootPageProps<TSlotType extends string | number> {
     /** Placeholder where the CMS renders the routes (pages) */
@@ -39,6 +40,7 @@ export interface IRootPageProps<TSlotType extends string | number> {
 
 export interface IPageRendererProps<TRootSlotType extends string | number> {
     plugins: MixedCollection<string, IPlugin>;
+    pluginConfigMetas: MixedCollection<string, IPluginConfigMeta<unknown>>;
     dataAdapters: MixedCollection<string, IDataAdapter<unknown, unknown>>;
     pages: IPage<any, any>[];
     rootModules: Record<TRootSlotType, IModule<any, {}>[]>;
@@ -77,7 +79,11 @@ extends React.Component<IPageRendererProps<TRootSlotType>> {
             pages: this.props.pages
         };
 
-        this.translationStore = new PluginTranslationStore(this.props.plugins, this.props.defaultLocale);
+        this.translationStore = new PluginTranslationStore(
+            this.props.plugins,
+            this.props.pluginConfigMetas,
+            this.props.defaultLocale
+        );
 
         this.translationStore.loadTranslations(this.props.locale)
             .catch(e => this.props.logger.error(e));
