@@ -1,6 +1,6 @@
 # Unreleased
 
-- New plugin config structure. New structure is an array of objects with `uri` and `config` keys. See [IPluginConfigMeta](./src/IPluginConfigMeta.ts).
+- New plugin config structure. Object map replaced with an array of objects, having at least a `uri` key, an optional `config` key and other keys such as `translations`. See [IPluginConfigMeta](./src/IPluginConfigMeta.ts).
 - Support translation overrides per plugin configuration (`translations` key)
 
 # v1.0.0-beta.8
