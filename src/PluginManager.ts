@@ -12,6 +12,7 @@ import { PluginValidator } from "./PluginValidator";
 import { IInlinePlugin } from "./IInlinePlugin";
 import { PageStructureValidator } from "./PageStructureValidator";
 import { version as cmsVersion } from "./version";
+import { IPluginConfigMeta } from "./IPluginConfigMeta";
 
 export class PluginManager {
     constructor(
@@ -27,12 +28,16 @@ export class PluginManager {
         let entitiesByPlugin = new Map<string, EntityCollection>();
         let allEntities = new EntityCollection();
         let pageEntityOwnerPlugins = new Map<EntityType, string>();
+        let pluginConfigMetas = new MixedCollection<string, IPluginConfigMeta<unknown>>();
 
         new PluginApiRuntime().init(window);
 
         for (let pluginUri of this.config.getPluginUris()) {
             try {
-                let pluginConfig = this.config.getPluginConfig(pluginUri);
+                let pluginConfigMeta = this.config.getPluginConfigMeta(pluginUri);
+                pluginConfigMetas.add(pluginUri, pluginConfigMeta);
+
+                let pluginConfig = pluginConfigMeta.config || {};
                 let pluginVersion = new URL(pluginUri).searchParams.get("v") || void 0;
                 this.logger.info(`Loading plugin ${pluginUri}...`);
                 pluginUri = pluginUri.split("?")[0];
@@ -80,6 +85,7 @@ export class PluginManager {
 
         let cmsRendererConfig: ICmsRendererConfig = {
             plugins,
+            pluginConfigMetas,
             pages,
             dataAdapters,
             rootModules

@@ -3,6 +3,7 @@ import { MixedCollection } from "./MixedCollection";
 import { IPlugin } from "plugin-api/IPlugin";
 import { ITranslation } from "plugin-api/ITranslation";
 import { Translation } from "./Translation";
+import { IPluginConfigMeta } from "./IPluginConfigMeta";
 
 export class PluginTranslationStore {
     @observable
@@ -10,6 +11,7 @@ export class PluginTranslationStore {
 
     constructor(
         private plugins: MixedCollection<string, IPlugin>,
+        private pluginConfigMetas: MixedCollection<string, IPluginConfigMeta<unknown>>,
         private defaultLocale: string
     ) {
 
@@ -28,8 +30,12 @@ export class PluginTranslationStore {
             });
 
         let loadedTranslations = await Promise.all(translationsPromises);
-        loadedTranslations.forEach(([key, translationJson]) => {
-            translations.add(key, new Translation(translationJson));
+        loadedTranslations.forEach(([uri, translationJson]) => {
+            translationJson = {
+                ...translationJson,
+                ...this.pluginConfigMetas.get(uri).translations?.[locale] ?? {}
+            };
+            translations.add(uri, new Translation(translationJson));
         });
         this.translations = translations;
     }

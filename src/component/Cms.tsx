@@ -67,7 +67,7 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
     constructor(props: ICmsProps<TRootSlotType>) {
         super(props);
 
-        let cmsConfig = new CmsConfig().fromJson(this.props.config);
+        let cmsConfig = new CmsConfig(this.props.logger).fromJson(this.props.config);
         let inlinePlugins = new Map(props.inlinePlugins ?
             Object.keys(props.inlinePlugins).map(k => ([k, props.inlinePlugins![k]])) :
             []);
@@ -102,12 +102,13 @@ export class Cms<TRootSlotType extends string> extends React.Component<ICmsProps
             return this.props.renderLoadingPlaceholder();
         }
 
-        let { dataAdapters, pages, plugins, rootModules } = this.cmsRendererConfig;
+        let { dataAdapters, pages, plugins, rootModules, pluginConfigMetas } = this.cmsRendererConfig;
 
         return <PageRenderer
             dataAdapters={dataAdapters}
             pages={pages}
             plugins={plugins}
+            pluginConfigMetas={pluginConfigMetas}
             rootModules={rootModules}
             logger={this.props.logger}
             locale={this.props.locale}
