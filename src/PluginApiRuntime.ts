@@ -2,14 +2,13 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as mobxExports from "mobx";
 import * as mobxReactExports from "mobx-react";
-// tslint:disable-next-line:import-blacklist
 import * as styledComponentsExports from "styled-components";
 
 import { InlineModule } from "./component/InlineModule";
 import { Link } from "./component/Link";
 import { ObservableWatcher } from "./watcher/ObservableWatcher";
 import { EventWatcher } from "./watcher/EventWatcher";
-import { ExternalLink } from "./component/ExternalLink";
+import { ExternalLink } from "@alethio/ui/lib/control/ExternalLink";
 import { ThemeContext } from "./ThemeContext";
 import { MenuItem } from "./component/topbar/MenuItem";
 import { withInternalNav } from "./withInternalNav";

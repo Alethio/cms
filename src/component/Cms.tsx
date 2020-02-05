@@ -2,7 +2,6 @@ import * as React from "react";
 import { ICmsRendererConfig } from "./ICmsRendererConfig";
 import { PluginManager } from "../PluginManager";
 import { ILogger } from "plugin-api";
-import { ITheme } from "@alethio/ui/lib/theme/ITheme";
 import { CmsConfig } from "../CmsConfig";
 import { IConfigData } from "../IConfigData";
 import { LoadStatus } from "../LoadStatus";
@@ -10,7 +9,7 @@ import { observer } from "mobx-react";
 import { observable } from "mobx";
 import { PageRenderer, IRootPageProps } from "./PageRenderer";
 import { ThemeContext } from "../ThemeContext";
-import { ThemeProvider as StyledThemeProvider } from "@alethio/ui/lib/styled-components";
+import { ThemeProvider as StyledThemeProvider } from "styled-components";
 import { IInlinePlugin } from "../IInlinePlugin";
 import { IHelpComponentProps } from "./IHelpComponentProps";
 import { version as cmsVersion } from "../version";
@@ -42,7 +41,7 @@ export interface ICmsProps<TRootSlotType extends string> {
      */
     inlinePlugins?: Record<string, () => Promise<IInlinePlugin>>;
     /** If using styled-components, you can specify valid theme object, that will be passed down to each plugin */
-    theme: ITheme;
+    theme: any;
     /** A locale string (e.g. en-US) that will be used for translation strings */
     locale: string;
     /** A fallback default locale for the plugins that don't support the currently selected locale */

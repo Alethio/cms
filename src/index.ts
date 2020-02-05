@@ -1,6 +1,5 @@
 import { Cms } from "./component/Cms";
 import { Link } from "./component/Link";
-import { ExternalLink } from "./component/ExternalLink";
 import { Translation } from "./Translation";
 import { withInternalNav } from "./withInternalNav";
 import { InternalNav } from "./InternalNav";
@@ -11,7 +10,7 @@ import { IInlinePlugin } from "./IInlinePlugin";
 import { HelpMode } from "./component/HelpMode";
 import { IHelpComponentProps } from "./component/IHelpComponentProps";
 
-export { Cms, Link, ExternalLink, Translation, withInternalNav, MenuItem, MenuLayer, IInlinePlugin };
+export { Cms, Link, Translation, withInternalNav, MenuItem, MenuLayer, IInlinePlugin };
 export { HelpMode, IHelpComponentProps };
 
 export { IConfigData } from "./IConfigData";

@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "@alethio/ui/lib/styled-components";
+import styled from "styled-components";
 import { ValueBox } from "@alethio/ui/lib/layout/content/box/ValueBox";
 import { MenuContext } from "./MenuContext";
 
@@ -10,7 +10,7 @@ const MenuIconRoot = styled.div`
     width: 48px;
     height: 48px;
 
-    background-color: ${props => props.theme.colors.sidebarBg};
+    background-color: #FFF;
     border-radius: 50%;
     box-shadow: 0 24px 56px 0 rgba(39, 54, 86, 0.16);
     margin: 12px;

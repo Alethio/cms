@@ -60,7 +60,6 @@
             }
         ],
         "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"],
-        "import-blacklist": [true, "styled-components"],
         "whitespace": [true,
             "check-branch",
             "check-decl",

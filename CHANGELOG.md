@@ -1,3 +1,9 @@
+# unreleased
+
+- **Breaking change**: removed `ExternalLink` component, use the one from `@alethio/ui/lib/control/ExternalLink` instead
+
+- removed dependency for ITheme from `@alethio/ui/lib/theme/ITheme`
+
 # v1.0.0-beta.9
 
 - New plugin config structure. Object map replaced with an array of objects, having at least a `uri` key, an optional `config` key and other keys such as `translations`. See [IPluginConfigMeta](./src/IPluginConfigMeta.ts).

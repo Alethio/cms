@@ -1,4 +1,4 @@
-import styled, { css } from "@alethio/ui/lib/styled-components";
+import styled, { css } from "styled-components";
 import { ModuleContainer } from "./ModuleContainer";
 
 export interface IModuleFrameProps {
@@ -16,7 +16,7 @@ export const ModuleFrame = styled<IModuleFrameProps, "div">("div")`
     ${ModuleContainer}:hover > & {
         ${props => props.hasHelp ? css`
             cursor: help;
-            border: 2px ${props.theme.colors.base.disabled} dashed;
+            border: 2px #d4deee dashed;
         ` : css`
             cursor: not-allowed;
         `}

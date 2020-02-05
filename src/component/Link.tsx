@@ -1,6 +1,6 @@
 import * as React from "react";
 import { HashLink as ReactRouterLink } from "react-router-hash-link";
-import { ExternalLink } from "./ExternalLink";
+import { ExternalLink } from "@alethio/ui/lib/control/ExternalLink";
 import { LinkContext } from "./LinkContext";
 import { InternalUrlResolver } from "../InternalUrlResolver";
 

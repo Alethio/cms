@@ -8,6 +8,5 @@
  * It's cleaner to drop in ThemeContext.Consumer inside the component's render method
  */
 import * as React from "react";
-import { ITheme } from "@alethio/ui/lib/theme/ITheme";
 
-export const ThemeContext = React.createContext<ITheme>((void 0)!);
+export const ThemeContext = React.createContext<any>((void 0)!);
