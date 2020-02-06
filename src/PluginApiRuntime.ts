@@ -8,7 +8,6 @@ import { InlineModule } from "./component/InlineModule";
 import { Link } from "./component/Link";
 import { ObservableWatcher } from "./watcher/ObservableWatcher";
 import { EventWatcher } from "./watcher/EventWatcher";
-import { ExternalLink } from "@alethio/ui/lib/control/ExternalLink";
 import { ThemeContext } from "./ThemeContext";
 import { MenuItem } from "./component/topbar/MenuItem";
 import { withInternalNav } from "./withInternalNav";
@@ -19,7 +18,6 @@ export class PluginApiRuntime {
         let exportsMap: Record<string, unknown> = {
             "plugin-api/component/InlineModule": { InlineModule },
             "plugin-api/component/Link": { Link },
-            "plugin-api/component/ExternalLink": { ExternalLink },
             "plugin-api/component/topbar/MenuItem": { MenuItem },
             "plugin-api/watcher/ObservableWatcher": { ObservableWatcher },
             "plugin-api/watcher/EventWatcher": { EventWatcher },
