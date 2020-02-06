@@ -1,8 +1,10 @@
 # unreleased
 
-- **Breaking change**: removed `ExternalLink` component, use the one from `@alethio/ui/lib/control/ExternalLink` instead
+## Breaking changes
 
-- removed dependency for ITheme from `@alethio/ui/lib/theme/ITheme`
+- Remove `ExternalLink` component, use the one from `@alethio/ui/lib/control/ExternalLink` instead
+- Remove dependency for ITheme from `@alethio/ui/lib/theme/ITheme`
+- Remove MenuItem and MenuLayer components, use the MobileMenuItem and MobileMenuLayer replacements from @alethio/ui v1.1.0+
 
 # v1.0.0-beta.9
 
