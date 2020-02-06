@@ -9,7 +9,6 @@ import { Link } from "./component/Link";
 import { ObservableWatcher } from "./watcher/ObservableWatcher";
 import { EventWatcher } from "./watcher/EventWatcher";
 import { ThemeContext } from "./ThemeContext";
-import { MenuItem } from "./component/topbar/MenuItem";
 import { withInternalNav } from "./withInternalNav";
 import { LoadStatus } from "./LoadStatus";
 
@@ -18,7 +17,6 @@ export class PluginApiRuntime {
         let exportsMap: Record<string, unknown> = {
             "plugin-api/component/InlineModule": { InlineModule },
             "plugin-api/component/Link": { Link },
-            "plugin-api/component/topbar/MenuItem": { MenuItem },
             "plugin-api/watcher/ObservableWatcher": { ObservableWatcher },
             "plugin-api/watcher/EventWatcher": { EventWatcher },
             "plugin-api/ThemeContext": { ThemeContext },
