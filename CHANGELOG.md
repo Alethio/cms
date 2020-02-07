@@ -1,3 +1,7 @@
+# v1.0.0-beta.11
+
+- Fix error caused by PluginTranslationStore when loading plugins with full version query string (?v=#.#.#)
+
 # v1.0.0-beta.10
 
 ## Breaking changes

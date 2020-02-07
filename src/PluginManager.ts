@@ -35,12 +35,14 @@ export class PluginManager {
         for (let pluginUri of this.config.getPluginUris()) {
             try {
                 let pluginConfigMeta = this.config.getPluginConfigMeta(pluginUri);
-                pluginConfigMetas.add(pluginUri, pluginConfigMeta);
 
                 let pluginConfig = pluginConfigMeta.config || {};
                 let pluginVersion = new URL(pluginUri).searchParams.get("v") || void 0;
                 this.logger.info(`Loading plugin ${pluginUri}...`);
                 pluginUri = pluginUri.split("?")[0];
+
+                // Index config metas by pluginUri (without query string)
+                pluginConfigMetas.add(pluginUri, pluginConfigMeta);
 
                 let pluginEntities = new EntityCollection();
 
