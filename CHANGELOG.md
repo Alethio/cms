@@ -1,3 +1,7 @@
+# v1.0.0-beta.12
+
+- Add support for data adapter dependencies when initializing plugin data sources
+
 # v1.0.0-beta.11
 
 - Fix error caused by PluginTranslationStore when loading plugins with full version query string (?v=#.#.#)

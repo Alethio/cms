@@ -13,6 +13,7 @@ import { IInlinePlugin } from "./IInlinePlugin";
 import { PageStructureValidator } from "./PageStructureValidator";
 import { version as cmsVersion } from "./version";
 import { IPluginConfigMeta } from "./IPluginConfigMeta";
+import { CancellationTokenSource } from "@puzzl/core/lib/async/cancellation";
 
 export class PluginManager {
     constructor(
@@ -82,7 +83,39 @@ export class PluginManager {
         let dataAdapters = allEntities.getDataAdapters();
 
         this.logger.info("Loading data sources...");
-        await Promise.all([...allEntities.getDataSources().values()].map(dataSource => dataSource.init()));
+        await Promise.all([...allEntities.getDataSources().entries()].map(async ([uri, dataSource]) => {
+            // Build a map of adapter dependencies data to be made available to each data source during initialization
+            // The adapters should be simple and not depend on and data source being already initialized
+            // TODO: Load the dataSources using a dependency graph (see DataLoader) and allow any data adapter deps
+            let adapterDepData = new Map<string, unknown>();
+
+            if (dataSource.dependencies?.length) {
+                await Promise.all(dataSource.dependencies.map(async dep => {
+                    if (!dataAdapters.has(dep.ref)) {
+                        if (dep.optional) {
+                            adapterDepData.set(dep.ref, void 0);
+                        }
+                        throw new Error(`Data source "${uri}" depends on a non-existing data adapter (${dep.ref})`);
+                    }
+                    let adapter = dataAdapters.get(dep.ref);
+                    if (JSON.stringify(adapter.contextType) !== "{}") {
+                        throw new Error(`Data source "${uri}" depends on an adapter with a non-root contextType` +
+                            `(adapterUri = "${dep.ref}", expected contextType={}, actual=${adapter.contextType})`);
+                    }
+                    if (adapter.dependencies?.length) {
+                        throw new Error(`Failed to load data source "${uri}". ` +
+                            `Adapter dependency ${dep.ref} must refer to a simple adapter, with no dependencies`);
+                    }
+                    let data = await adapter.load({}, new CancellationTokenSource().token, new Map());
+                    adapterDepData.set(dep.ref, data);
+                    if (dep.alias) {
+                        adapterDepData.set(dep.alias, data);
+                    }
+                }));
+            }
+
+            await dataSource.init(adapterDepData);
+        }));
         this.logger.info("Data sources loaded.");
 
         let cmsRendererConfig: ICmsRendererConfig = {

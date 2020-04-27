@@ -38,6 +38,7 @@ Alethio CMS is a front-end content management system designed for real-time and 
     - [Data adapter dependencies](#data-adapter-dependencies)
     - [Inline modules](#inline-modules)
     - [Data Sources](#data-sources)
+    - [Data dependencies between plugins](#data-dependencies-between-plugins)
     - [Inline plugins](#inline-plugins)
 - [Deployment with plugins](#deployment-with-plugins)
     - [Option 1. Install the plugins in the base app at build-time](#option-1-install-the-plugins-in-the-base-app-at-build-time)
@@ -959,6 +960,28 @@ const myPlugin = {
 ```
 
 (TODO) Make data sources accessible between plugins using their URIs.
+
+### Data dependencies between plugins
+
+There are cases when plugins depend on each other's data for initialization. Simple data adapter dependencies are supported when initializing a plugin's data source, like so:
+
+```jsx
+// in plugin1
+api.addDataAdapter("adapter://my.company.tld/plugin1/some-data", { /*...*/ load: async () => 2 });
+// in plugin2
+api.addDataSource("source://my.company.tld/plugin-2/some-source", {
+    dependencies: [{
+        ref: "adapter://my.company.tld/plugin1/some-data",
+        alias: "someData"
+    }],
+    init: async (depData) => {
+        console.log(depData.get("someData"));
+        // Or depData.get("adapter://my.company.tld/plugin1/some-data")
+    });
+});
+```
+
+**Important**: Only a subset of data adapter features are supported. For instance, it must not have nested dependencies or a contextType other than `{}` (root context).
 
 ### Inline plugins
 
